@@ -26,7 +26,7 @@ export abstract class AbstractFrontend {
     constructor(plugin: PluginPage) {
         this.plugin = plugin;
     }
-
+    abstract init(): void;
     abstract run(): void;
     abstract stop(): void;
 }
@@ -101,6 +101,9 @@ export class PluginPage {
                 const frontendInstance = new frontendClass(plugin);
                 this.frontends.set(frontendClass, frontendInstance);
             }
+        });
+        this.frontends.forEach(frontendInstance => {
+            frontendInstance.init();
         });
         await plugin.ready();
         this.frontends.forEach(frontendInstance => {
@@ -273,6 +276,10 @@ class PluginPageContext implements IframeLike {
 
 @exposable
 class DefaultPageApi extends AbstractFrontend {
+
+    init(): void {
+
+    }
 
     run(): void {
 

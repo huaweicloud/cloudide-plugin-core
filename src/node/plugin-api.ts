@@ -67,6 +67,7 @@ export abstract class AbstractBackend {
         this.plugin = plugin;
         this.context = context;
     }
+    abstract init(): void;
     abstract run(): void;
     abstract stop(): void;
 }
@@ -99,6 +100,9 @@ export class Plugin {
                 const backendInstance = new backendClass(plugin, context);
                 this.backends.set(backendClass, backendInstance);
             }
+        });
+        this.backends.forEach(backendInstance => {
+            backendInstance.init();
         });
         await plugin.ready();
         this.backends.forEach(backendInstance => {
@@ -453,6 +457,10 @@ export class DefaultPluginApiHost extends AbstractBackend {
         .set('theia.window.onDidOpenTerminal', cloudide.window.onDidOpenTerminal);
 
     private huaweiCommonApi?: any;
+
+    public init(): void {
+
+    }
 
     public run(): void {
         this.registerEventListener();
