@@ -67,7 +67,7 @@ export abstract class AbstractBackend {
         this.plugin = plugin;
         this.context = context;
     }
-    abstract init(): void;
+    abstract async init(): Promise<void>;
     abstract run(): void;
     abstract stop(): void;
 }
@@ -101,9 +101,13 @@ export class Plugin {
                 this.backends.set(backendClass, backendInstance);
             }
         });
-        this.backends.forEach(backendInstance => {
-            backendInstance.init();
-        });
+        const initPromises = [];
+        let iterator = this.backends.values();
+        let backendInstance: IteratorResult<AbstractBackend>;
+        while (backendInstance = iterator.next(), !backendInstance.done) {
+            initPromises.push(backendInstance.value.init());
+        }
+        await Promise.all(initPromises);
         await plugin.ready();
         this.backends.forEach(backendInstance => {
             backendInstance.run();
@@ -458,7 +462,7 @@ export class DefaultPluginApiHost extends AbstractBackend {
 
     private huaweiCommonApi?: any;
 
-    public init(): void {
+    public async init(): Promise<void> {
 
     }
 

@@ -26,7 +26,7 @@ export abstract class AbstractFrontend {
     constructor(plugin: PluginPage) {
         this.plugin = plugin;
     }
-    abstract init(): void;
+    abstract async init(): Promise<void>;
     abstract run(): void;
     abstract stop(): void;
 }
@@ -102,9 +102,13 @@ export class PluginPage {
                 this.frontends.set(frontendClass, frontendInstance);
             }
         });
-        this.frontends.forEach(frontendInstance => {
-            frontendInstance.init();
-        });
+        const initPromises = [];
+        let iterator = this.frontends.values();
+        let frontendInstance: IteratorResult<AbstractFrontend>;
+        while (frontendInstance = iterator.next(), !frontendInstance.done) {
+            initPromises.push(frontendInstance.value.init());
+        }
+        await Promise.all(initPromises);
         await plugin.ready();
         this.frontends.forEach(frontendInstance => {
             frontendInstance.run();
@@ -277,7 +281,7 @@ class PluginPageContext implements IframeLike {
 @exposable
 class DefaultPageApi extends AbstractFrontend {
 
-    init(): void {
+    async init(): Promise<void> {
 
     }
 
