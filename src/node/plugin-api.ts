@@ -5,10 +5,11 @@
 
 import * as cloudide from '@cloudide/plugin';
 import * as path from 'path';
-import * as fs from "fs";
+import * as fs from 'fs';
 import * as cheerio from 'cheerio';
 import { v4 as uuid } from 'uuid';
 import { IframeLike, messaging, exposable, Deferred, expose, call, Messaging } from '@cloudide/messaging';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const packageJson = require('../../package.json');
 
 export enum LogLevel {
@@ -41,7 +42,7 @@ export interface WebviewOptions {
     iconPath: { light: string; dark: string } | string;
 
     /**
-     * The path of the page to be displayed. 
+     * The path of the page to be displayed.
      * Local page resources are placed under "resources" by default, and starting with "local:".
      * Remote page cannot interact with the IDE backend.
      */
@@ -57,7 +58,6 @@ export interface WebviewOptions {
      * get extra data using 'plugin.cloudidePluginApi.getExtData()' in frontend.
      */
     extData?: any;
-
 }
 
 export abstract class AbstractBackend {
@@ -75,7 +75,7 @@ export abstract class AbstractBackend {
 const beforeUninstallEventType = 'cloudide.plugin.beforeUninstall';
 
 interface IBackendConstructor<T> extends Function {
-    new(plugin: Plugin, context: cloudide.ExtensionContext): T;
+    new (plugin: Plugin, context: cloudide.ExtensionContext): T;
 }
 
 export class Plugin {
@@ -93,43 +93,55 @@ export class Plugin {
         this.initApi(this, pluginContainerPanel.context, backends);
     }
 
-    private async initApi(plugin: Plugin, context: cloudide.ExtensionContext, backendClasses: IBackendConstructor<AbstractBackend>[]): Promise<void> {
+    private async initApi(
+        plugin: Plugin,
+        context: cloudide.ExtensionContext,
+        backendClasses: IBackendConstructor<AbstractBackend>[]
+    ): Promise<void> {
         backendClasses.push(DefaultPluginApiHost);
-        backendClasses.forEach(backendClass => {
+        backendClasses.forEach((backendClass) => {
             if (!this.backends.get(backendClass)) {
                 const backendInstance = new backendClass(plugin, context);
                 this.backends.set(backendClass, backendInstance);
             }
         });
         const initPromises = [];
-        let iterator = this.backends.values();
+        const iterator = this.backends.values();
         let backendInstance: IteratorResult<AbstractBackend>;
-        while (backendInstance = iterator.next(), !backendInstance.done) {
+        while (((backendInstance = iterator.next()), !backendInstance.done)) {
             initPromises.push(backendInstance.value.init());
         }
         await Promise.all(initPromises);
         await plugin.ready();
-        this.backends.forEach(backendInstance => {
+        this.backends.forEach((backendInstance) => {
             backendInstance.run();
         });
     }
 
-    public static createOrShow(context: cloudide.ExtensionContext, opts: WebviewOptions, backends: IBackendConstructor<AbstractBackend>[]) {
+    public static createOrShow(
+        context: cloudide.ExtensionContext,
+        opts: WebviewOptions,
+        backends: IBackendConstructor<AbstractBackend>[]
+    ): Plugin {
         if (Plugin.instance && !Plugin.instance.container.isDisposed()) {
-            Plugin.instance.container.defaultPluginPanel.reveal(opts.targetArea, Plugin.instance.container.defaultPluginPanel.viewColumn, opts.preserveFocus);
+            Plugin.instance.container.defaultPluginPanel.reveal(
+                opts.targetArea,
+                Plugin.instance.container.defaultPluginPanel.viewColumn,
+                opts.preserveFocus
+            );
             return Plugin.instance;
         }
         this.instance = new Plugin(new PluginContainerPanel(context, opts), backends);
         return Plugin.instance;
     }
 
-    public static getInstance() {
+    public static getInstance(): Plugin {
         return Plugin.instance;
     }
 
-    public async ready() {
+    public async ready(): Promise<boolean> {
         await this.pageInitialized.promise;
-        this.call('cloudide.page.onBackendInitialized', true).then(result => {
+        this.call('cloudide.page.onBackendInitialized', true).then((result) => {
             if (result) {
                 this.isReady.resolve(true);
             } else {
@@ -139,7 +151,7 @@ export class Plugin {
         return this.isReady.promise;
     }
 
-    public async call(identifier: string, ...args: any[]) {
+    public async call(identifier: string, ...args: any[]): Promise<any> {
         await this.pageInitialized.promise;
         const messagingInstance = Messaging.getInstance();
         if (messagingInstance) {
@@ -148,46 +160,44 @@ export class Plugin {
         return Promise.resolve(false);
     }
 
-    public log(level: string, message: string) {
+    public log(level: string, message: string): void {
         (this.backends.get(DefaultPluginApiHost) as DefaultPluginApiHost).log(level, message);
     }
 
-    revive(panel: cloudide.WebviewPanel, context: cloudide.ExtensionContext, opts: WebviewOptions, state: any) {
+    revive(panel: cloudide.WebviewPanel, context: cloudide.ExtensionContext, opts: WebviewOptions, state: any): void {
         if (this.container && this.container.isDisposed()) {
             if (typeof panel.showOptions === 'object') {
-                panel.reveal(panel.showOptions!.area, panel.viewColumn, opts.preserveFocus);
+                panel.reveal(panel.showOptions.area, panel.viewColumn, opts.preserveFocus);
             } else {
                 panel.reveal(panel.viewColumn, opts.preserveFocus);
             }
-
         } else {
             // dispose webview if already revealed in case plugin is registered to start on event "*"
             panel.dispose();
         }
     }
 
-    dispose() {
+    dispose(): void {
         this.container.dispose();
     }
 
-    get container() {
+    get container(): PluginContainerPanel {
         return this._container;
     }
 
-    get options() {
+    get options(): WebviewOptions {
         return this._options;
     }
 
-    public stop() {
-        this.backends.forEach(backendInstance => {
+    public stop(): void {
+        this.backends.forEach((backendInstance) => {
             backendInstance.stop();
         });
         this.dispose();
-        this.container.context.subscriptions.forEach(disposable => {
+        this.container.context.subscriptions.forEach((disposable) => {
             disposable.dispose();
         });
     }
-
 }
 
 const backendClientIdentifier = 'backend';
@@ -197,12 +207,11 @@ const backendClientIdentifier = 'backend';
  */
 @messaging(backendClientIdentifier)
 class PluginContainerPanel implements IframeLike {
-
     readonly context: cloudide.ExtensionContext;
     readonly defaultPluginPanel: cloudide.WebviewPanel;
-    private dispossed: boolean = false;
+    private dispossed = false;
     private options: WebviewOptions;
-    private messageHandler?: ((message: any) => void);
+    private messageHandler?: (message: any) => void;
     private disposedEventHandler?: (...args: any[]) => void;
     private revealingDynamicWebview: cloudide.WebviewPanel[] = [];
 
@@ -233,29 +242,42 @@ class PluginContainerPanel implements IframeLike {
 
     private createWebviewPanel(opts: WebviewOptions): cloudide.WebviewPanel {
         this.options = opts;
-        const panel = cloudide.window.createCloudWebviewPanel(opts.viewType, opts.title, {
-            area: opts.targetArea,
-            preserveFocus: opts.preserveFocus ? opts.preserveFocus : false
-        }, {
-            enableScripts: true,
-            localResourceRoots: [
-                cloudide.Uri.file(path.join(this.context.extensionPath, 'resources'))
-            ],
-            retainContextWhenHidden: true
-        });
-        const lightIconUri = cloudide.Uri.file(path.join(this.context.extensionPath, typeof opts.iconPath === 'object' ? opts.iconPath.light : opts.iconPath));
-        const darkIconUri = cloudide.Uri.file(path.join(this.context.extensionPath, typeof opts.iconPath === 'object' ? opts.iconPath.dark : opts.iconPath));
+        const panel = cloudide.window.createCloudWebviewPanel(
+            opts.viewType,
+            opts.title,
+            {
+                area: opts.targetArea,
+                preserveFocus: opts.preserveFocus ? opts.preserveFocus : false
+            },
+            {
+                enableScripts: true,
+                localResourceRoots: [cloudide.Uri.file(path.join(this.context.extensionPath, 'resources'))],
+                retainContextWhenHidden: true
+            }
+        );
+        const lightIconUri = cloudide.Uri.file(
+            path.join(
+                this.context.extensionPath,
+                typeof opts.iconPath === 'object' ? opts.iconPath.light : opts.iconPath
+            )
+        );
+        const darkIconUri = cloudide.Uri.file(
+            path.join(
+                this.context.extensionPath,
+                typeof opts.iconPath === 'object' ? opts.iconPath.dark : opts.iconPath
+            )
+        );
         panel.iconPath = { light: lightIconUri, dark: darkIconUri };
         return panel;
     }
 
     public isDynamicWebviewPanelRevealing(panel: cloudide.WebviewPanel): boolean {
-        return !!this.revealingDynamicWebview.find(panel => panel.viewType === panel.viewType);
+        return !!this.revealingDynamicWebview.find((panel) => panel.viewType === panel.viewType);
     }
 
     public createDynamicWebviewPanel(opts: WebviewOptions, override?: boolean) {
         // return webview if already revealed
-        let dynamicWebviewPanel = this.revealingDynamicWebview.find(panel => panel.viewType === opts.viewType);
+        let dynamicWebviewPanel = this.revealingDynamicWebview.find((panel) => panel.viewType === opts.viewType);
         if (dynamicWebviewPanel) {
             if (override) {
                 dynamicWebviewPanel.title = opts.title;
@@ -272,7 +294,7 @@ class PluginContainerPanel implements IframeLike {
         dynamicWebviewPanel = this.createWebviewPanel(opts);
         dynamicWebviewPanel.webview.html = this.renderHtml(opts.viewType, opts.viewUrl, opts.extData);
         dynamicWebviewPanel.onDidDispose(() => {
-            this.revealingDynamicWebview = this.revealingDynamicWebview.filter(panel => {
+            this.revealingDynamicWebview = this.revealingDynamicWebview.filter((panel) => {
                 return !panel.dispose && panel.viewType !== dynamicWebviewPanel!.viewType;
             });
         });
@@ -283,7 +305,7 @@ class PluginContainerPanel implements IframeLike {
     }
 
     public disposeDynamicWebviewPanel(viewType: string) {
-        let dynamicWebviewPanel = this.revealingDynamicWebview.find(panel => panel.viewType === viewType);
+        const dynamicWebviewPanel = this.revealingDynamicWebview.find((panel) => panel.viewType === viewType);
         if (dynamicWebviewPanel) {
             dynamicWebviewPanel.dispose();
         }
@@ -295,7 +317,7 @@ class PluginContainerPanel implements IframeLike {
 
     postMessage(message: any) {
         this.defaultPluginPanel.webview.postMessage(message);
-        this.revealingDynamicWebview.forEach(panel => {
+        this.revealingDynamicWebview.forEach((panel) => {
             panel.webview.postMessage(message);
         });
     }
@@ -308,7 +330,7 @@ class PluginContainerPanel implements IframeLike {
         this.dispossed = true;
         this.defaultPluginPanel.dispose();
 
-        this.revealingDynamicWebview.forEach(webview => {
+        this.revealingDynamicWebview.forEach((webview) => {
             webview.dispose();
         });
 
@@ -335,7 +357,9 @@ class PluginContainerPanel implements IframeLike {
             return '';
         }
         const extensionPath = this.context.extensionPath;
-        let iframeHtmlUri = cloudide.Uri.file(path.join(extensionPath, 'resources/page', 'index.html')).with({ scheme: 'theia-resource' }).toString();
+        let iframeHtmlUri = cloudide.Uri.file(path.join(extensionPath, 'resources/page', 'index.html'))
+            .with({ scheme: 'theia-resource' })
+            .toString();
         if (webviewUrl.startsWith('local:')) {
             const localEntryPoint = webviewUrl.replace('local:', '');
             const pathPrefix = localEntryPoint.substring(0, localEntryPoint.lastIndexOf('/'));
@@ -362,13 +386,23 @@ class PluginContainerPanel implements IframeLike {
                     };
                 })();
             </script>`);
-            $("[href], [src]").each((index, HtmlElement) => {
+            $('[href], [src]').each((index, HtmlElement) => {
                 const originSrc = $(HtmlElement).attr('src');
                 const originHref = $(HtmlElement).attr('href');
                 if (originSrc && !originSrc.startsWith('http')) {
-                    $(HtmlElement).attr('src', cloudide.Uri.file(path.join(extensionPath, `${pathPrefix}/${originSrc}`)).with({ scheme: 'theia-resource' }).toString());
+                    $(HtmlElement).attr(
+                        'src',
+                        cloudide.Uri.file(path.join(extensionPath, `${pathPrefix}/${originSrc}`))
+                            .with({ scheme: 'theia-resource' })
+                            .toString()
+                    );
                 } else if (originHref && !originHref.startsWith('http')) {
-                    $(HtmlElement).attr('href', cloudide.Uri.file(path.join(extensionPath, `${pathPrefix}/${originHref}`)).with({ scheme: 'theia-resource' }).toString());
+                    $(HtmlElement).attr(
+                        'href',
+                        cloudide.Uri.file(path.join(extensionPath, `${pathPrefix}/${originHref}`))
+                            .with({ scheme: 'theia-resource' })
+                            .toString()
+                    );
                 }
             });
 
@@ -463,7 +497,7 @@ export class DefaultPluginApiHost extends AbstractBackend {
     private huaweiCommonApi?: any;
 
     public async init(): Promise<void> {
-
+        // do nothing
     }
 
     public run(): void {
@@ -475,30 +509,33 @@ export class DefaultPluginApiHost extends AbstractBackend {
     }
 
     private registerEventListener() {
-
         this.supportedEventTypes.forEach((onEvent, eventType) => {
-            this.context.subscriptions.push(onEvent(event => {
-                if (this.subscribedEvents.indexOf(eventType) >= 0) {
-                    this.fireTheiaEvent(eventType, event);
-                }
-            }));
+            this.context.subscriptions.push(
+                onEvent((event) => {
+                    if (this.subscribedEvents.indexOf(eventType) >= 0) {
+                        this.fireTheiaEvent(eventType, event);
+                    }
+                })
+            );
         });
     }
 
     // get plugin package.json
     @expose('cloudide.plugin')
-    public getPackageJson() {
+    public getPackageJson(): any {
         return packageJson;
     }
 
     @expose('cloudide.plugin.onPageInit')
     public onPageInit(success?: boolean): boolean {
         if (!Plugin.getInstance().pageInitialized.isPending) {
-            Plugin.getInstance().call('cloudide.page.onBackendInitialized', true).then(result => {
-                if (result) {
-                    console.log('backend already initialized, renotify plugin frontend success.');
-                }
-            });
+            Plugin.getInstance()
+                .call('cloudide.page.onBackendInitialized', true)
+                .then((result) => {
+                    if (result) {
+                        console.log('backend already initialized, renotify plugin frontend success.');
+                    }
+                });
         }
 
         const huaweiCommon = cloudide.extensions.getExtension('huawei-builtin.huawei-cloudide-common');
@@ -512,21 +549,20 @@ export class DefaultPluginApiHost extends AbstractBackend {
     }
 
     @expose('cloudide.plugin.createDynamicWebview')
-    public createDynamicWebview(opts: WebviewOptions, override?: boolean) {
+    public createDynamicWebview(opts: WebviewOptions, override?: boolean): void {
         Plugin.getInstance().container.createDynamicWebviewPanel(opts, override);
     }
 
     @expose('cloudide.plugin.disposeDynamicWebview')
-    public disposeDynamicWebview(viewType: string) {
+    public disposeDynamicWebview(viewType: string): void {
         Plugin.getInstance().container.disposeDynamicWebviewPanel(viewType);
     }
 
     @expose('cloudide.api')
-    public getTheiaApi(...property: string[]) {
+    public getTheiaApi(...property: string[]): any {
         const properties = {};
         if (!property || property.length === 0) {
-
-            Object.keys(cloudide).forEach(key => {
+            Object.keys(cloudide).forEach((key) => {
                 const value = String((cloudide as any)[key]);
                 (properties as any)[key] = {
                     value: value,
@@ -536,7 +572,7 @@ export class DefaultPluginApiHost extends AbstractBackend {
             return properties;
         }
         let currentPro: any;
-        property.forEach(pro => {
+        property.forEach((pro) => {
             currentPro = (cloudide as any)[pro] ? (cloudide as any)[pro] : undefined;
         });
         if (!currentPro) {
@@ -546,7 +582,7 @@ export class DefaultPluginApiHost extends AbstractBackend {
         if (!currentProChildren) {
             return undefined;
         }
-        currentProChildren.forEach(key => {
+        currentProChildren.forEach((key) => {
             const value = currentPro[key];
             if (typeof value === 'object' || typeof value !== 'function') {
                 (properties as any)[key] = {
@@ -561,11 +597,10 @@ export class DefaultPluginApiHost extends AbstractBackend {
             }
         });
         return properties;
-
     }
 
     @expose('cloudide.plugin.getSupportedEventTypes')
-    public getSupportedEventTypes() {
+    public getSupportedEventTypes(): any {
         const retEventTypes = {};
         this.supportedEventTypes.forEach((value, key) => {
             (retEventTypes as any)[key] = value.toString();
@@ -574,7 +609,7 @@ export class DefaultPluginApiHost extends AbstractBackend {
     }
 
     @expose('cloudide.plugin.subscribeEvent')
-    public subscribeEvent(eventType: string) {
+    public subscribeEvent(eventType: string): void {
         if (this.supportedEventTypes.get(eventType) && this.subscribedEvents.indexOf(eventType) < 0) {
             this.subscribedEvents.push(eventType);
         } else {
@@ -587,24 +622,24 @@ export class DefaultPluginApiHost extends AbstractBackend {
     }
 
     @expose('cloudide.plugin.unsubscribeEvent')
-    public unsubscribeEvent(eventType: string) {
+    public unsubscribeEvent(eventType: string): void {
         this.subscribedEvents.splice(this.subscribedEvents.indexOf(eventType), 1);
     }
 
     @expose('cloudide.plugin.fireEvent')
-    public fireEventToPlugins(eventType: string, event: any) {
+    public fireEventToPlugins(eventType: string, event: any): void {
         if (this.huaweiCommonApi) {
             this.huaweiCommonApi.fireEvent(eventType, event);
         }
     }
 
     @expose('cloudide.plugin.getExtensionPath')
-    public getExtensionPath() {
+    public getExtensionPath(): string {
         return Plugin.getInstance().container.context.extensionPath;
     }
 
-    @expose('theia')
-    public theiaWindowApi(module: string, property: string, ...args: any[]) {
+    @expose('cloudide')
+    public theiaWindowApi(module: string, property: string, ...args: any[]): any {
         if (!module || !property) {
             return Promise.reject('module or property not specified.');
         }
@@ -618,17 +653,20 @@ export class DefaultPluginApiHost extends AbstractBackend {
     }
 
     @expose('cloudide.log')
-    public log(level: string, message: string) {
+    public log(level: string, message: string): void {
         const currentTime = new Date().toISOString().replace('T', ' ').substr(0, 19);
         console.log(`[${level}][${currentTime}][plugin][${Plugin.getInstance().options.viewType}] ${message}`);
     }
 
     @call('cloudide.page.onEvent')
-    public fireTheiaEvent(type: string, event: any) {
+    public fireTheiaEvent(type: string, event: any): void {
         // console.log(`firevent: ${type}`);
-        if (type === beforeUninstallEventType && event && (event.pluginId as string).toLowerCase() === `${packageJson.publisher}.${packageJson.name}`.toLowerCase()) {
+        if (
+            type === beforeUninstallEventType &&
+            event &&
+            (event.pluginId as string).toLowerCase() === `${packageJson.publisher}.${packageJson.name}`.toLowerCase()
+        ) {
             Plugin.getInstance().stop();
         }
     }
-
 }

@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: MIT
  ********************************************************************************/
 
-declare var acquireVsCodeApi: any;
-declare var acquireCloudidePluginApi: any;
-import { Deferred, IframeLike, exposable, expose, messaging, Messaging } from "@cloudide/messaging";
+declare let acquireVsCodeApi: any;
+declare let acquireCloudidePluginApi: any;
+import { Deferred, IframeLike, exposable, expose, messaging, Messaging } from '@cloudide/messaging';
 
 interface CloudidePluginApi {
     getViewType: () => any;
@@ -32,7 +32,7 @@ export abstract class AbstractFrontend {
 }
 
 interface IFrontendConstructor<T> extends Function {
-    new(plugin: PluginPage): T;
+    new (plugin: PluginPage): T;
 }
 
 const backendClientIdentifier = 'backend';
@@ -60,16 +60,17 @@ export class PluginPage {
             }
         });
         if (doc.readyState === 'loading') {
-            doc.addEventListener('DOMContentLoaded', () => { this.domInitialized.resolve(true) });
+            doc.addEventListener('DOMContentLoaded', () => {
+                this.domInitialized.resolve(true);
+            });
         } else {
             this.domInitialized.resolve(true);
         }
 
         this.initApi(this, frontends);
-
     }
 
-    public async ready() {
+    public async ready(): Promise<boolean> {
         const domInitialized = await this.domInitialized.promise;
         if (domInitialized) {
             this.syncInitializedStatus();
@@ -78,11 +79,14 @@ export class PluginPage {
     }
 
     private async syncInitializedStatus() {
-        this._call('cloudide.plugin.onPageInit', true).then(value => {
-            this.isReady.resolve(value);
-        }).catch(err => {
-            this.isReady.resolve(false);
-        });
+        this._call('cloudide.plugin.onPageInit', true)
+            .then((value) => {
+                this.isReady.resolve(value);
+            })
+            .catch((err) => {
+                console.error(err);
+                this.isReady.resolve(false);
+            });
     }
 
     private async _call(func: string, ...args: any[]): Promise<any> {
@@ -96,21 +100,21 @@ export class PluginPage {
 
     private async initApi(plugin: PluginPage, frontends: IFrontendConstructor<AbstractFrontend>[]) {
         frontends.push(DefaultPageApi);
-        frontends.forEach(frontendClass => {
+        frontends.forEach((frontendClass) => {
             if (!this.frontends.get(frontendClass)) {
                 const frontendInstance = new frontendClass(plugin);
                 this.frontends.set(frontendClass, frontendInstance);
             }
         });
         const initPromises = [];
-        let iterator = this.frontends.values();
+        const iterator = this.frontends.values();
         let frontendInstance: IteratorResult<AbstractFrontend>;
-        while (frontendInstance = iterator.next(), !frontendInstance.done) {
+        while (((frontendInstance = iterator.next()), !frontendInstance.done)) {
             initPromises.push(frontendInstance.value.init());
         }
         await Promise.all(initPromises);
         await plugin.ready();
-        this.frontends.forEach(frontendInstance => {
+        this.frontends.forEach((frontendInstance) => {
             frontendInstance.run();
         });
     }
@@ -122,7 +126,7 @@ export class PluginPage {
         this.instance = new PluginPage(new PluginPageContext(window), frontends);
     }
 
-    public static getInstance() {
+    public static getInstance(): PluginPage {
         return this.instance;
     }
 
@@ -131,10 +135,10 @@ export class PluginPage {
      * @param eventType unique type of event
      * @param event event object
      */
-    public onEvent(eventType: string, event: any) {
+    public onEvent(eventType: string, event: any): void {
         const eventHandlers = this.registeredEventHandlers.get(eventType);
         if (eventHandlers) {
-            eventHandlers.forEach(eventHandler => {
+            eventHandlers.forEach((eventHandler) => {
                 eventHandler(eventType, event);
             });
         }
@@ -145,7 +149,7 @@ export class PluginPage {
      * @param eventType unique type of event
      * @param event event object
      */
-    public async fireEvent(eventType: string, event: any) {
+    public async fireEvent(eventType: string, event: any): Promise<void> {
         this.call('cloudide.plugin.fireEvent', eventType, event);
     }
 
@@ -161,11 +165,11 @@ export class PluginPage {
         if (typeof func !== 'string') {
             funcName = func.name as string;
         }
-        if (funcName.startsWith('theia')) {
+        if (funcName.startsWith('theia') || funcName.startsWith('cloudide')) {
             const funcCallArry = funcName.split('.');
             const argsForTheia = funcCallArry.slice(1);
             argsForTheia.push(...args);
-            return this._call(funcCallArry[0], ...argsForTheia);
+            return this._call('cloudide', ...argsForTheia);
         }
         return this._call(funcName, ...args);
     }
@@ -175,7 +179,10 @@ export class PluginPage {
      * @param eventType unique type of event
      * @param eventHandler callback function to execute when event fired
      */
-    public async subscribeEvent(eventType: string, eventHandler: (eventType: string, event: any) => void) {
+    public async subscribeEvent(
+        eventType: string,
+        eventHandler: (eventType: string, event: any) => void
+    ): Promise<void> {
         await this.call('cloudide.plugin.subscribeEvent', eventType);
         const eventHandlers = this.registeredEventHandlers.get(eventType);
         if (eventHandlers) {
@@ -191,7 +198,10 @@ export class PluginPage {
      * @param eventType unique type of event
      * @param eventHandler callback function registered
      */
-    public async unsubscribeEvent(eventType: string, eventHandler: (eventType: string, event: any) => void) {
+    public async unsubscribeEvent(
+        eventType: string,
+        eventHandler: (eventType: string, event: any) => void
+    ): Promise<void> {
         await this.call('cloudide.plugin.unsubscribeEvent', eventType);
         const eventHandlers = this.registeredEventHandlers.get(eventType);
         if (eventHandlers) {
@@ -204,8 +214,8 @@ export class PluginPage {
      * @param eventType unique type of event
      * @param eventHandler callback function registered
      */
-    public async unsubscribeAllEvents() {
-        for (let eventType of this.registeredEventHandlers.keys()) {
+    public async unsubscribeAllEvents(): Promise<void> {
+        for (const eventType of this.registeredEventHandlers.keys()) {
             await this.call('cloudide.plugin.unsubscribeEvent', eventType);
         }
         this.registeredEventHandlers.clear();
@@ -216,7 +226,7 @@ export class PluginPage {
      * @param level log level
      * @param message log message
      */
-    public async log(level: LogLevel, message: string) {
+    public async log(level: LogLevel, message: string): Promise<void> {
         this.call('cloudide.log', level.valueOf(), message);
     }
 
@@ -224,13 +234,12 @@ export class PluginPage {
      * convert local resource path to webview path
      * @param path relative path to the plugin root directory
      */
-    public async toWebviewResource(path: string) {
+    public async toWebviewResource(path: string): Promise<string> {
         if (!this.extensionPath) {
             this.extensionPath = await this.call('cloudide.plugin.getExtensionPath');
         }
         return `theia-resource/file${this.extensionPath}/${path}`.split(/\/+/).join('/');
     }
-
 }
 
 @messaging(cloudidePluginApi.getViewType())
@@ -240,14 +249,14 @@ class PluginPageContext implements IframeLike {
     private disposedEventHandler?: (...args: any[]) => void;
     readonly initialized: Deferred<boolean> = new Deferred<boolean>();
     private vscodeApi: {
-        postMessage: (msg: any) => any,
-        setState: (newState: any) => any,
-        getState: () => any
+        postMessage: (msg: any) => any;
+        setState: (newState: any) => any;
+        getState: () => any;
     };
 
     constructor(window: Window) {
         this.window = window;
-        this.window.onunload = evt => {
+        this.window.onunload = (evt) => {
             if (this.disposedEventHandler) {
                 this.disposedEventHandler();
             }
@@ -263,7 +272,7 @@ class PluginPageContext implements IframeLike {
     registerMessageHandler(handleMessage: (message: any) => void): void {
         this.handleMessage = handleMessage;
         const handlePluginMessage = this.handleMessage;
-        this.window.addEventListener('message', event => {
+        this.window.addEventListener('message', (event) => {
             handlePluginMessage(event.data);
         });
     }
@@ -272,25 +281,23 @@ class PluginPageContext implements IframeLike {
         if (this.vscodeApi) {
             this.vscodeApi.postMessage(message);
         } else {
-            this.window.parent.postMessage(message, "*");
+            this.window.parent.postMessage(message, '*');
         }
     }
-
 }
 
 @exposable
 class DefaultPageApi extends AbstractFrontend {
-
     async init(): Promise<void> {
-
+        // do nothing
     }
 
     run(): void {
-
+        // do nothing
     }
 
     stop(): void {
-
+        // do nothing
     }
 
     @expose('cloudide.page.onBackendInitialized')
