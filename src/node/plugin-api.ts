@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  ********************************************************************************/
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as cloudide from '@cloudide/plugin';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -295,6 +296,7 @@ class PluginContainerPanel implements IframeLike {
         dynamicWebviewPanel.webview.html = this.renderHtml(opts.viewType, opts.viewUrl, opts.extData);
         dynamicWebviewPanel.onDidDispose(() => {
             this.revealingDynamicWebview = this.revealingDynamicWebview.filter((panel) => {
+                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
                 return !panel.dispose && panel.viewType !== dynamicWebviewPanel!.viewType;
             });
         });
@@ -348,7 +350,7 @@ class PluginContainerPanel implements IframeLike {
         return this.dispossed;
     }
 
-    private update(viewType: string, webviewUrl: string, extData?: any) {
+    private update(viewType: string, webviewUrl: string) {
         this.defaultPluginPanel.webview.html = this.renderHtml(viewType, webviewUrl);
     }
 
@@ -458,41 +460,45 @@ export class DefaultPluginApiHost extends AbstractBackend {
     readonly subscribedEvents: string[] = [];
     readonly supportedEventTypes: Map<string, cloudide.Event<any>> = new Map()
         // events from workspace module
-        .set('theia.workspace.onDidChangeConfiguration', cloudide.workspace.onDidChangeConfiguration)
-        .set('theia.workspace.onDidChangeTextDocument', cloudide.workspace.onDidChangeTextDocument)
-        .set('theia.workspace.onDidChangeWorkspaceFolders', cloudide.workspace.onDidChangeWorkspaceFolders)
-        .set('theia.workspace.onDidCloseTextDocument', cloudide.workspace.onDidCloseTextDocument)
-        .set('theia.workspace.onDidOpenTextDocument', cloudide.workspace.onDidOpenTextDocument)
-        // .set('theia.workspace.onDidRenameFile', theia.workspace.onDidRenameFile) //removed
-        .set('theia.workspace.onDidSaveTextDocument', cloudide.workspace.onDidSaveTextDocument)
-        // .set('theia.workspace.onWillRenameFile', theia.workspace.onWillRenameFile) //removed
-        .set('theia.workspace.onWillSaveTextDocument', cloudide.workspace.onWillSaveTextDocument)
+        .set('cloudide.workspace.onDidChangeConfiguration', cloudide.workspace.onDidChangeConfiguration)
+        .set('cloudide.workspace.onDidChangeTextDocument', cloudide.workspace.onDidChangeTextDocument)
+        .set('cloudide.workspace.onDidChangeWorkspaceFolders', cloudide.workspace.onDidChangeWorkspaceFolders)
+        .set('cloudide.workspace.onDidCloseTextDocument', cloudide.workspace.onDidCloseTextDocument)
+        .set('cloudide.workspace.onDidCreateFiles', cloudide.workspace.onDidCreateFiles)
+        .set('cloudide.workspace.onDidDeleteFiles', cloudide.workspace.onDidDeleteFiles)
+        .set('cloudide.workspace.onDidOpenTextDocument', cloudide.workspace.onDidOpenTextDocument)
+        .set('cloudide.workspace.onDidRenameFiles', cloudide.workspace.onDidRenameFiles)
+        .set('cloudide.workspace.onDidSaveTextDocument', cloudide.workspace.onDidSaveTextDocument)
+        .set('cloudide.workspace.onWillCreateFiles', cloudide.workspace.onWillCreateFiles)
+        .set('cloudide.workspace.onWillDeleteFiles', cloudide.workspace.onWillDeleteFiles)
+        .set('cloudide.workspace.onWillRenameFiles', cloudide.workspace.onWillRenameFiles)
+        .set('cloudide.workspace.onWillSaveTextDocument', cloudide.workspace.onWillSaveTextDocument)
         // events from debug module
-        .set('theia.debug.onDidChangeActiveDebugSession', cloudide.debug.onDidChangeActiveDebugSession)
-        .set('theia.debug.onDidChangeBreakpoints', cloudide.debug.onDidChangeBreakpoints)
-        .set('theia.debug.onDidReceiveDebugSessionCustomEvent', cloudide.debug.onDidReceiveDebugSessionCustomEvent)
-        .set('theia.debug.onDidStartDebugSession', cloudide.debug.onDidStartDebugSession)
-        .set('theia.debug.onDidTerminateDebugSession', cloudide.debug.onDidTerminateDebugSession)
+        .set('cloudide.debug.onDidChangeActiveDebugSession', cloudide.debug.onDidChangeActiveDebugSession)
+        .set('cloudide.debug.onDidChangeBreakpoints', cloudide.debug.onDidChangeBreakpoints)
+        .set('cloudide.debug.onDidReceiveDebugSessionCustomEvent', cloudide.debug.onDidReceiveDebugSessionCustomEvent)
+        .set('cloudide.debug.onDidStartDebugSession', cloudide.debug.onDidStartDebugSession)
+        .set('cloudide.debug.onDidTerminateDebugSession', cloudide.debug.onDidTerminateDebugSession)
         // events from languages module
-        .set('theia.languages.onDidChangeDiagnostics', cloudide.languages.onDidChangeDiagnostics)
+        .set('cloudide.languages.onDidChangeDiagnostics', cloudide.languages.onDidChangeDiagnostics)
         // events from plugins module
-        .set('theia.plugins.onDidChange', cloudide.extensions.onDidChange)
+        .set('cloudide.plugins.onDidChange', cloudide.extensions.onDidChange)
         // events from tasks module
-        .set('theia.tasks.onDidEndTask', cloudide.tasks.onDidEndTask)
-        .set('theia.tasks.onDidEndTaskProcess', cloudide.tasks.onDidEndTaskProcess)
-        .set('theia.tasks.onDidStartTask', cloudide.tasks.onDidStartTask)
-        .set('theia.tasks.onDidStartTaskProcess', cloudide.tasks.onDidStartTaskProcess)
+        .set('cloudide.tasks.onDidEndTask', cloudide.tasks.onDidEndTask)
+        .set('cloudide.tasks.onDidEndTaskProcess', cloudide.tasks.onDidEndTaskProcess)
+        .set('cloudide.tasks.onDidStartTask', cloudide.tasks.onDidStartTask)
+        .set('cloudide.tasks.onDidStartTaskProcess', cloudide.tasks.onDidStartTaskProcess)
         // events from window module
-        .set('theia.window.onDidChangeActiveTerminal', cloudide.window.onDidChangeActiveTerminal)
-        .set('theia.window.onDidChangeActiveTextEditor', cloudide.window.onDidChangeActiveTextEditor)
-        .set('theia.window.onDidChangeTextEditorOptions', cloudide.window.onDidChangeTextEditorOptions)
-        .set('theia.window.onDidChangeTextEditorSelection', cloudide.window.onDidChangeTextEditorSelection)
-        .set('theia.window.onDidChangeTextEditorViewColumn', cloudide.window.onDidChangeTextEditorViewColumn)
-        .set('theia.window.onDidChangeTextEditorVisibleRanges', cloudide.window.onDidChangeTextEditorVisibleRanges)
-        .set('theia.window.onDidChangeVisibleTextEditors', cloudide.window.onDidChangeVisibleTextEditors)
-        .set('theia.window.onDidChangeWindowState', cloudide.window.onDidChangeWindowState)
-        .set('theia.window.onDidCloseTerminal', cloudide.window.onDidCloseTerminal)
-        .set('theia.window.onDidOpenTerminal', cloudide.window.onDidOpenTerminal);
+        .set('cloudide.window.onDidChangeActiveTerminal', cloudide.window.onDidChangeActiveTerminal)
+        .set('cloudide.window.onDidChangeActiveTextEditor', cloudide.window.onDidChangeActiveTextEditor)
+        .set('cloudide.window.onDidChangeTextEditorOptions', cloudide.window.onDidChangeTextEditorOptions)
+        .set('cloudide.window.onDidChangeTextEditorSelection', cloudide.window.onDidChangeTextEditorSelection)
+        .set('cloudide.window.onDidChangeTextEditorViewColumn', cloudide.window.onDidChangeTextEditorViewColumn)
+        .set('cloudide.window.onDidChangeTextEditorVisibleRanges', cloudide.window.onDidChangeTextEditorVisibleRanges)
+        .set('cloudide.window.onDidChangeVisibleTextEditors', cloudide.window.onDidChangeVisibleTextEditors)
+        .set('cloudide.window.onDidChangeWindowState', cloudide.window.onDidChangeWindowState)
+        .set('cloudide.window.onDidCloseTerminal', cloudide.window.onDidCloseTerminal)
+        .set('cloudide.window.onDidOpenTerminal', cloudide.window.onDidOpenTerminal);
 
     private huaweiCommonApi?: any;
 
@@ -627,6 +633,7 @@ export class DefaultPluginApiHost extends AbstractBackend {
     }
 
     @expose('cloudide.plugin.fireEvent')
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     public fireEventToPlugins(eventType: string, event: any): void {
         if (this.huaweiCommonApi) {
             this.huaweiCommonApi.fireEvent(eventType, event);
@@ -659,6 +666,7 @@ export class DefaultPluginApiHost extends AbstractBackend {
     }
 
     @call('cloudide.page.onEvent')
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     public fireTheiaEvent(type: string, event: any): void {
         // console.log(`firevent: ${type}`);
         if (

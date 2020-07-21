@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: MIT
  ********************************************************************************/
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 declare let acquireVsCodeApi: any;
 declare let acquireCloudidePluginApi: any;
 import { Deferred, IframeLike, exposable, expose, messaging, Messaging } from '@cloudide/messaging';
@@ -256,9 +258,9 @@ class PluginPageContext implements IframeLike {
 
     constructor(window: Window) {
         this.window = window;
-        this.window.onunload = (evt) => {
+        this.window.onunload = (evt: Event) => {
             if (this.disposedEventHandler) {
-                this.disposedEventHandler();
+                this.disposedEventHandler(evt);
             }
         };
 
