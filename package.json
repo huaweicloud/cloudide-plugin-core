@@ -17,7 +17,7 @@
         "lib"
     ],
     "devDependencies": {
-        "@cloudide/plugin": "0.0.2",
+        "@cloudide/plugin": "latest",
         "@types/cheerio": "^0.22.16",
         "@types/uuid": "^3.4.5",
         "@typescript-eslint/eslint-plugin": "^3.6.1",
