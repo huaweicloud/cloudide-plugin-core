@@ -8,6 +8,7 @@
 declare let acquireVsCodeApi: any;
 declare let acquireCloudidePluginApi: any;
 import { Deferred, IframeLike, exposable, expose, messaging, Messaging } from '@cloudide/messaging';
+import { WebviewOptions } from '../common/plugin-common';
 
 interface CloudidePluginApi {
     getViewType: () => any;
@@ -241,6 +242,21 @@ export class PluginPage {
             this.extensionPath = await this.call('cloudide.plugin.getExtensionPath');
         }
         return `theia-resource/file${this.extensionPath}/${path}`.split(/\/+/).join('/');
+    }
+
+    /**
+     * @param opts options to configure the dynamic webview
+     * @param override replace the dynamic webview with the same viewType
+     */
+    public createDynamicWebview(opts: WebviewOptions, override?: boolean): void {
+        this.call('cloudide.plugin.createDynamicWebview', opts, override);
+    }
+
+    /**
+     * @param viewType view type of the dynamic webview
+     */
+    public disposeDynamicWebview(viewType: string): void {
+        this.call('cloudide.plugin.disposeDynamicWebview', viewType);
     }
 }
 
