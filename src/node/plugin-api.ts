@@ -109,7 +109,10 @@ export class Plugin {
         await this.pageInitialized.promise;
         const messagingInstance = Messaging.getInstance();
         if (messagingInstance) {
-            return messagingInstance.call(identifier, ...args);
+            return messagingInstance.call(
+                identifier.indexOf('::') >= 0 ? identifier : `${this.options.viewType}::${identifier}`,
+                ...args
+            );
         }
         return Promise.resolve(false);
     }
