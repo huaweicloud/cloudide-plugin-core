@@ -10,7 +10,7 @@ import * as fs from 'fs';
 import * as cheerio from 'cheerio';
 import { v4 as uuid } from 'uuid';
 import { IframeLike, messaging, exposable, Deferred, expose, call, Messaging } from '@cloudide/messaging';
-import { WebviewOptions } from '../common/plugin-common';
+import { WebviewOptions, EventType } from '../common/plugin-common';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const packageJson = require('../../package.json');
 
@@ -416,45 +416,51 @@ export class DefaultPluginApiHost extends AbstractBackend {
     readonly subscribedEvents: string[] = [];
     readonly supportedEventTypes: Map<string, cloudide.Event<any>> = new Map()
         // events from workspace module
-        .set('cloudide.workspace.onDidChangeConfiguration', cloudide.workspace.onDidChangeConfiguration)
-        .set('cloudide.workspace.onDidChangeTextDocument', cloudide.workspace.onDidChangeTextDocument)
-        .set('cloudide.workspace.onDidChangeWorkspaceFolders', cloudide.workspace.onDidChangeWorkspaceFolders)
-        .set('cloudide.workspace.onDidCloseTextDocument', cloudide.workspace.onDidCloseTextDocument)
-        .set('cloudide.workspace.onDidCreateFiles', cloudide.workspace.onDidCreateFiles)
-        .set('cloudide.workspace.onDidDeleteFiles', cloudide.workspace.onDidDeleteFiles)
-        .set('cloudide.workspace.onDidOpenTextDocument', cloudide.workspace.onDidOpenTextDocument)
-        .set('cloudide.workspace.onDidRenameFiles', cloudide.workspace.onDidRenameFiles)
-        .set('cloudide.workspace.onDidSaveTextDocument', cloudide.workspace.onDidSaveTextDocument)
-        .set('cloudide.workspace.onWillCreateFiles', cloudide.workspace.onWillCreateFiles)
-        .set('cloudide.workspace.onWillDeleteFiles', cloudide.workspace.onWillDeleteFiles)
-        .set('cloudide.workspace.onWillRenameFiles', cloudide.workspace.onWillRenameFiles)
-        .set('cloudide.workspace.onWillSaveTextDocument', cloudide.workspace.onWillSaveTextDocument)
+        .set(EventType.CLOUDIDE_WORKSPACE_ONDIDCHANGECONFIGURATION, cloudide.workspace.onDidChangeConfiguration)
+        .set(EventType.CLOUDIDE_WORKSPACE_ONDIDCHANGETEXTDOCUMENT, cloudide.workspace.onDidChangeTextDocument)
+        .set(EventType.CLOUDIDE_WORKSPACE_ONDIDCHANGEWORKSPACEFOLDERS, cloudide.workspace.onDidChangeWorkspaceFolders)
+        .set(EventType.CLOUDIDE_WORKSPACE_ONDIDCLOSETEXTDOCUMENT, cloudide.workspace.onDidCloseTextDocument)
+        .set(EventType.CLOUDIDE_WORKSPACE_ONDIDCREATEFILES, cloudide.workspace.onDidCreateFiles)
+        .set(EventType.CLOUDIDE_WORKSPACE_ONDIDDELETEFILES, cloudide.workspace.onDidDeleteFiles)
+        .set(EventType.CLOUDIDE_WORKSPACE_ONDIDOPENTEXTDOCUMENT, cloudide.workspace.onDidOpenTextDocument)
+        .set(EventType.CLOUDIDE_WORKSPACE_ONDIDRENAMEFILES, cloudide.workspace.onDidRenameFiles)
+        .set(EventType.CLOUDIDE_WORKSPACE_ONDIDSAVETEXTDOCUMENT, cloudide.workspace.onDidSaveTextDocument)
+        .set(EventType.CLOUDIDE_WORKSPACE_ONWILLCREATEFILES, cloudide.workspace.onWillCreateFiles)
+        .set(EventType.CLOUDIDE_WORKSPACE_ONWILLDELETEFILES, cloudide.workspace.onWillDeleteFiles)
+        .set(EventType.CLOUDIDE_WORKSPACE_ONWILLRENAMEFILES, cloudide.workspace.onWillRenameFiles)
+        .set(EventType.CLOUDIDE_WORKSPACE_ONWILLSAVETEXTDOCUMENT, cloudide.workspace.onWillSaveTextDocument)
         // events from debug module
-        .set('cloudide.debug.onDidChangeActiveDebugSession', cloudide.debug.onDidChangeActiveDebugSession)
-        .set('cloudide.debug.onDidChangeBreakpoints', cloudide.debug.onDidChangeBreakpoints)
-        .set('cloudide.debug.onDidReceiveDebugSessionCustomEvent', cloudide.debug.onDidReceiveDebugSessionCustomEvent)
-        .set('cloudide.debug.onDidStartDebugSession', cloudide.debug.onDidStartDebugSession)
-        .set('cloudide.debug.onDidTerminateDebugSession', cloudide.debug.onDidTerminateDebugSession)
+        .set(EventType.CLOUDIDE_DEBUG_ONDIDCHANGEACTIVEDEBUGSESSION, cloudide.debug.onDidChangeActiveDebugSession)
+        .set(EventType.CLOUDIDE_DEBUG_ONDIDCHANGEBREAKPOINTS, cloudide.debug.onDidChangeBreakpoints)
+        .set(
+            EventType.CLOUDIDE_DEBUG_ONDIDRECEIVEDEBUGSESSIONCUSTOMEVENT,
+            cloudide.debug.onDidReceiveDebugSessionCustomEvent
+        )
+        .set(EventType.CLOUDIDE_DEBUG_ONDIDSTARTDEBUGSESSION, cloudide.debug.onDidStartDebugSession)
+        .set(EventType.CLOUDIDE_DEBUG_ONDIDTERMINATEDEBUGSESSION, cloudide.debug.onDidTerminateDebugSession)
         // events from languages module
-        .set('cloudide.languages.onDidChangeDiagnostics', cloudide.languages.onDidChangeDiagnostics)
+        .set(EventType.CLOUDIDE_LANGUAGES_ONDIDCHANGEDIAGNOSTICS, cloudide.languages.onDidChangeDiagnostics)
         // events from plugins module
-        .set('cloudide.plugins.onDidChange', cloudide.extensions.onDidChange)
+        .set(EventType.CLOUDIDE_EXTENSIONS_ONDIDCHANGE, cloudide.extensions.onDidChange)
         // events from tasks module
-        .set('cloudide.tasks.onDidEndTask', cloudide.tasks.onDidEndTask)
-        .set('cloudide.tasks.onDidEndTaskProcess', cloudide.tasks.onDidEndTaskProcess)
-        .set('cloudide.tasks.onDidStartTask', cloudide.tasks.onDidStartTask)
-        .set('cloudide.tasks.onDidStartTaskProcess', cloudide.tasks.onDidStartTaskProcess)
+        .set(EventType.CLOUDIDE_TASKS_ONDIDENDTASK, cloudide.tasks.onDidEndTask)
+        .set(EventType.CLOUDIDE_TASKS_ONDIDENDTASKPROCESS, cloudide.tasks.onDidEndTaskProcess)
+        .set(EventType.CLOUDIDE_TASKS_ONDIDSTARTTASK, cloudide.tasks.onDidStartTask)
+        .set(EventType.CLOUDIDE_TASKS_ONDIDSTARTTASKPROCESS, cloudide.tasks.onDidStartTaskProcess)
         // events from window module
-        .set('cloudide.window.onDidChangeActiveTerminal', cloudide.window.onDidChangeActiveTerminal)
-        .set('cloudide.window.onDidChangeActiveTextEditor', cloudide.window.onDidChangeActiveTextEditor)
-        .set('cloudide.window.onDidChangeTextEditorOptions', cloudide.window.onDidChangeTextEditorOptions)
-        .set('cloudide.window.onDidChangeTextEditorSelection', cloudide.window.onDidChangeTextEditorSelection)
-        .set('cloudide.window.onDidChangeTextEditorViewColumn', cloudide.window.onDidChangeTextEditorViewColumn)
-        .set('cloudide.window.onDidChangeTextEditorVisibleRanges', cloudide.window.onDidChangeTextEditorVisibleRanges)
-        .set('cloudide.window.onDidChangeVisibleTextEditors', cloudide.window.onDidChangeVisibleTextEditors)
-        .set('cloudide.window.onDidChangeWindowState', cloudide.window.onDidChangeWindowState)
-        .set('cloudide.window.onDidCloseTerminal', cloudide.window.onDidCloseTerminal)
-        .set('cloudide.window.onDidOpenTerminal', cloudide.window.onDidOpenTerminal);
+        .set(EventType.CLOUDIDE_WINDOW_ONDIDCHANGEACTIVETERMINAL, cloudide.window.onDidChangeActiveTerminal)
+        .set(EventType.CLOUDIDE_WINDOW_ONDIDCHANGEACTIVETEXTEDITOR, cloudide.window.onDidChangeActiveTextEditor)
+        .set(EventType.CLOUDIDE_WINDOW_ONDIDCHANGETEXTEDITOROPTIONS, cloudide.window.onDidChangeTextEditorOptions)
+        .set(EventType.CLOUDIDE_WINDOW_ONDIDCHANGETEXTEDITORSELECTION, cloudide.window.onDidChangeTextEditorSelection)
+        .set(EventType.CLOUDIDE_WINDOW_ONDIDCHANGETEXTEDITORVIEWCOLUMN, cloudide.window.onDidChangeTextEditorViewColumn)
+        .set(
+            EventType.CLOUDIDE_WINDOW_ONDIDCHANGETEXTEDITORVISIBLERANGES,
+            cloudide.window.onDidChangeTextEditorVisibleRanges
+        )
+        .set(EventType.CLOUDIDE_WINDOW_ONDIDCHANGEVISIBLETEXTEDITORS, cloudide.window.onDidChangeVisibleTextEditors)
+        .set(EventType.CLOUDIDE_WINDOW_ONDIDCHANGEWINDOWSTATE, cloudide.window.onDidChangeWindowState)
+        .set(EventType.CLOUDIDE_WINDOW_ONDIDCLOSETERMINAL, cloudide.window.onDidCloseTerminal)
+        .set(EventType.CLOUDIDE_WINDOW_ONDIDOPENTERMINAL, cloudide.window.onDidOpenTerminal);
 
     private huaweiCommonApi?: any;
 

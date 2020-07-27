@@ -50,3 +50,46 @@ export interface WebviewOptions {
      */
     extData?: any;
 }
+
+export enum EventType {
+    // events from workspace module
+    CLOUDIDE_WORKSPACE_ONDIDCHANGECONFIGURATION = 'cloudide.workspace.onDidChangeConfiguration',
+    CLOUDIDE_WORKSPACE_ONDIDCHANGETEXTDOCUMENT = 'cloudide.workspace.onDidChangeTextDocument',
+    CLOUDIDE_WORKSPACE_ONDIDCHANGEWORKSPACEFOLDERS = 'cloudide.workspace.onDidChangeWorkspaceFolders',
+    CLOUDIDE_WORKSPACE_ONDIDCLOSETEXTDOCUMENT = 'cloudide.workspace.onDidCloseTextDocument',
+    CLOUDIDE_WORKSPACE_ONDIDCREATEFILES = 'cloudide.workspace.onDidCreateFiles',
+    CLOUDIDE_WORKSPACE_ONDIDDELETEFILES = 'cloudide.workspace.onDidDeleteFiles',
+    CLOUDIDE_WORKSPACE_ONDIDOPENTEXTDOCUMENT = 'cloudide.workspace.onDidOpenTextDocument',
+    CLOUDIDE_WORKSPACE_ONDIDRENAMEFILES = 'cloudide.workspace.onDidRenameFiles',
+    CLOUDIDE_WORKSPACE_ONDIDSAVETEXTDOCUMENT = 'cloudide.workspace.onDidSaveTextDocument',
+    CLOUDIDE_WORKSPACE_ONWILLCREATEFILES = 'cloudide.workspace.onWillCreateFiles',
+    CLOUDIDE_WORKSPACE_ONWILLDELETEFILES = 'cloudide.workspace.onWillDeleteFiles',
+    CLOUDIDE_WORKSPACE_ONWILLRENAMEFILES = 'cloudide.workspace.onWillRenameFiles',
+    CLOUDIDE_WORKSPACE_ONWILLSAVETEXTDOCUMENT = 'cloudide.workspace.onWillSaveTextDocument',
+    // events from debug module
+    CLOUDIDE_DEBUG_ONDIDCHANGEACTIVEDEBUGSESSION = 'cloudide.debug.onDidChangeActiveDebugSession',
+    CLOUDIDE_DEBUG_ONDIDCHANGEBREAKPOINTS = 'cloudide.debug.onDidChangeBreakpoints',
+    CLOUDIDE_DEBUG_ONDIDRECEIVEDEBUGSESSIONCUSTOMEVENT = 'cloudide.debug.onDidReceiveDebugSessionCustomEvent',
+    CLOUDIDE_DEBUG_ONDIDSTARTDEBUGSESSION = 'cloudide.debug.onDidStartDebugSession',
+    CLOUDIDE_DEBUG_ONDIDTERMINATEDEBUGSESSION = 'cloudide.debug.onDidTerminateDebugSession',
+    // events from languages module
+    CLOUDIDE_LANGUAGES_ONDIDCHANGEDIAGNOSTICS = 'cloudide.languages.onDidChangeDiagnostics',
+    // events from plugins module
+    CLOUDIDE_EXTENSIONS_ONDIDCHANGE = 'cloudide.plugins.onDidChange',
+    // events from tasks module
+    CLOUDIDE_TASKS_ONDIDENDTASK = 'cloudide.tasks.onDidEndTask',
+    CLOUDIDE_TASKS_ONDIDENDTASKPROCESS = 'cloudide.tasks.onDidEndTaskProcess',
+    CLOUDIDE_TASKS_ONDIDSTARTTASK = 'cloudide.tasks.onDidStartTask',
+    CLOUDIDE_TASKS_ONDIDSTARTTASKPROCESS = 'cloudide.tasks.onDidStartTaskProcess',
+    // events from window module
+    CLOUDIDE_WINDOW_ONDIDCHANGEACTIVETERMINAL = 'cloudide.window.onDidChangeActiveTerminal',
+    CLOUDIDE_WINDOW_ONDIDCHANGEACTIVETEXTEDITOR = 'cloudide.window.onDidChangeActiveTextEditor',
+    CLOUDIDE_WINDOW_ONDIDCHANGETEXTEDITOROPTIONS = 'cloudide.window.onDidChangeTextEditorOptions',
+    CLOUDIDE_WINDOW_ONDIDCHANGETEXTEDITORSELECTION = 'cloudide.window.onDidChangeTextEditorSelection',
+    CLOUDIDE_WINDOW_ONDIDCHANGETEXTEDITORVIEWCOLUMN = 'cloudide.window.onDidChangeTextEditorViewColumn',
+    CLOUDIDE_WINDOW_ONDIDCHANGETEXTEDITORVISIBLERANGES = 'cloudide.window.onDidChangeTextEditorVisibleRanges',
+    CLOUDIDE_WINDOW_ONDIDCHANGEVISIBLETEXTEDITORS = 'cloudide.window.onDidChangeVisibleTextEditors',
+    CLOUDIDE_WINDOW_ONDIDCHANGEWINDOWSTATE = 'cloudide.window.onDidChangeWindowState',
+    CLOUDIDE_WINDOW_ONDIDCLOSETERMINAL = 'cloudide.window.onDidCloseTerminal',
+    CLOUDIDE_WINDOW_ONDIDOPENTERMINAL = 'cloudide.window.onDidOpenTerminal'
+}
