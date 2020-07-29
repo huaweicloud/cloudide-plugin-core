@@ -82,7 +82,7 @@ export class PluginPage {
     }
 
     private async syncInitializedStatus() {
-        this._call('cloudide.plugin.onPageInit', true)
+        this._call('plugin.onPageInit', true)
             .then((value) => {
                 this.isReady.resolve(value);
             })
@@ -153,7 +153,7 @@ export class PluginPage {
      * @param event event object
      */
     public async fireEvent(eventType: string, event: any): Promise<void> {
-        this.call('cloudide.plugin.fireEvent', eventType, event);
+        this.call('plugin.fireEvent', eventType, event);
     }
 
     /**
@@ -186,7 +186,7 @@ export class PluginPage {
         eventType: string,
         eventHandler: (eventType: string, event: any) => void
     ): Promise<void> {
-        await this.call('cloudide.plugin.subscribeEvent', eventType);
+        await this.call('plugin.subscribeEvent', eventType);
         const eventHandlers = this.registeredEventHandlers.get(eventType);
         if (eventHandlers) {
             eventHandlers.push(eventHandler);
@@ -205,7 +205,7 @@ export class PluginPage {
         eventType: string,
         eventHandler: (eventType: string, event: any) => void
     ): Promise<void> {
-        await this.call('cloudide.plugin.unsubscribeEvent', eventType);
+        await this.call('plugin.unsubscribeEvent', eventType);
         const eventHandlers = this.registeredEventHandlers.get(eventType);
         if (eventHandlers) {
             eventHandlers.splice(eventHandlers.indexOf(eventHandler), 1);
@@ -219,7 +219,7 @@ export class PluginPage {
      */
     public async unsubscribeAllEvents(): Promise<void> {
         for (const eventType of this.registeredEventHandlers.keys()) {
-            await this.call('cloudide.plugin.unsubscribeEvent', eventType);
+            await this.call('plugin.unsubscribeEvent', eventType);
         }
         this.registeredEventHandlers.clear();
     }
@@ -230,7 +230,7 @@ export class PluginPage {
      * @param message log message
      */
     public async log(level: LogLevel, message: string): Promise<void> {
-        this.call('cloudide.log', level.valueOf(), message);
+        this.call('plugin.log', level.valueOf(), message);
     }
 
     /**
@@ -239,7 +239,7 @@ export class PluginPage {
      */
     public async toWebviewResource(path: string): Promise<string> {
         if (!this.extensionPath) {
-            this.extensionPath = await this.call('cloudide.plugin.getExtensionPath');
+            this.extensionPath = await this.call('plugin.getExtensionPath');
         }
         return `theia-resource/file${this.extensionPath}/${path}`.split(/\/+/).join('/');
     }
@@ -248,15 +248,15 @@ export class PluginPage {
      * @param opts options to configure the dynamic webview
      * @param override replace the dynamic webview with the same viewType
      */
-    public createDynamicWebview(opts: WebviewOptions, override?: boolean): void {
-        this.call('cloudide.plugin.createDynamicWebview', opts, override);
+    public createDynamicWebview(opts: WebviewOptions, override?: boolean): Promise<void> {
+        return this.call('plugin.createDynamicWebview', opts, override);
     }
 
     /**
      * @param viewType view type of the dynamic webview
      */
     public disposeDynamicWebview(viewType: string): void {
-        this.call('cloudide.plugin.disposeDynamicWebview', viewType);
+        this.call('plugin.disposeDynamicWebview', viewType);
     }
 }
 
@@ -324,7 +324,7 @@ class DefaultPageApi extends AbstractFrontend {
         return result;
     }
 
-    @expose('cloudide.page.onEvent')
+    @expose('plugin.page.onEvent')
     public onEvent(eventType: string, event: any) {
         this.plugin.onEvent(eventType, event);
     }

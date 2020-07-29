@@ -489,12 +489,12 @@ export class DefaultPluginApiHost extends AbstractBackend {
     }
 
     // get plugin package.json
-    @expose('cloudide.plugin')
+    @expose('plugin.packageJson')
     public getPackageJson(): any {
         return packageJson;
     }
 
-    @expose('cloudide.plugin.onPageInit')
+    @expose('plugin.onPageInit')
     public onPageInit(success?: boolean): boolean {
         if (!Plugin.getInstance().pageInitialized.isPending) {
             Plugin.getInstance()
@@ -516,17 +516,17 @@ export class DefaultPluginApiHost extends AbstractBackend {
         return !!success;
     }
 
-    @expose('cloudide.plugin.createDynamicWebview')
-    public createDynamicWebview(opts: WebviewOptions, override?: boolean): void {
-        Plugin.getInstance().container.createDynamicWebviewPanel(opts, override);
+    @expose('plugin.createDynamicWebview')
+    public createDynamicWebview(opts: WebviewOptions, override?: boolean): cloudide.WebviewPanel | undefined {
+        return Plugin.getInstance().container.createDynamicWebviewPanel(opts, override);
     }
 
-    @expose('cloudide.plugin.disposeDynamicWebview')
+    @expose('plugin.disposeDynamicWebview')
     public disposeDynamicWebview(viewType: string): void {
         Plugin.getInstance().container.disposeDynamicWebviewPanel(viewType);
     }
 
-    @expose('cloudide.api')
+    @expose('plugin.api')
     public getTheiaApi(...property: string[]): any {
         const properties = {};
         if (!property || property.length === 0) {
@@ -567,7 +567,7 @@ export class DefaultPluginApiHost extends AbstractBackend {
         return properties;
     }
 
-    @expose('cloudide.plugin.getSupportedEventTypes')
+    @expose('plugin.getSupportedEventTypes')
     public getSupportedEventTypes(): any {
         const retEventTypes = {};
         this.supportedEventTypes.forEach((value, key) => {
@@ -576,7 +576,7 @@ export class DefaultPluginApiHost extends AbstractBackend {
         return retEventTypes;
     }
 
-    @expose('cloudide.plugin.subscribeEvent')
+    @expose('plugin.subscribeEvent')
     public subscribeEvent(eventType: string): void {
         if (this.supportedEventTypes.get(eventType) && this.subscribedEvents.indexOf(eventType) < 0) {
             this.subscribedEvents.push(eventType);
@@ -589,12 +589,12 @@ export class DefaultPluginApiHost extends AbstractBackend {
         }
     }
 
-    @expose('cloudide.plugin.unsubscribeEvent')
+    @expose('plugin.unsubscribeEvent')
     public unsubscribeEvent(eventType: string): void {
         this.subscribedEvents.splice(this.subscribedEvents.indexOf(eventType), 1);
     }
 
-    @expose('cloudide.plugin.fireEvent')
+    @expose('plugin.fireEvent')
     // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     public fireEventToPlugins(eventType: string, event: any): void {
         if (this.huaweiCommonApi) {
@@ -602,7 +602,7 @@ export class DefaultPluginApiHost extends AbstractBackend {
         }
     }
 
-    @expose('cloudide.plugin.getExtensionPath')
+    @expose('plugin.getExtensionPath')
     public getExtensionPath(): string {
         return Plugin.getInstance().container.context.extensionPath;
     }
@@ -621,13 +621,13 @@ export class DefaultPluginApiHost extends AbstractBackend {
         }
     }
 
-    @expose('cloudide.log')
+    @expose('plugin.log')
     public log(level: string, message: string): void {
         const currentTime = new Date().toISOString().replace('T', ' ').substr(0, 19);
         console.log(`[${level}][${currentTime}][plugin][${Plugin.getInstance().options.viewType}] ${message}`);
     }
 
-    @call('cloudide.page.onEvent')
+    @call('plugin.page.onEvent')
     // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     public fireTheiaEvent(type: string, event: any): void {
         // console.log(`firevent: ${type}`);
