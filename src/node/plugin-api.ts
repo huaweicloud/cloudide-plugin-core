@@ -121,6 +121,10 @@ export class Plugin {
         (this.backends.get(DefaultPluginApiHost) as DefaultPluginApiHost).log(level, message);
     }
 
+    public fireEventToPlugins(eventType: string, event: any): void {
+        (this.backends.get(DefaultPluginApiHost) as DefaultPluginApiHost).fireEventToPlugins(eventType, event);
+    }
+
     revive(panel: cloudide.WebviewPanel, context: cloudide.ExtensionContext, opts: WebviewOptions, state: any): void {
         if (this.container && this.container.isDisposed()) {
             if (typeof panel.showOptions === 'object') {

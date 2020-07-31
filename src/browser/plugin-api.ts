@@ -152,7 +152,7 @@ export class PluginPage {
      * @param eventType unique type of event
      * @param event event object
      */
-    public async fireEvent(eventType: string, event: any): Promise<void> {
+    public async fireEventToPlugins(eventType: string, event: any): Promise<void> {
         this.call('plugin.fireEvent', eventType, event);
     }
 
@@ -178,7 +178,7 @@ export class PluginPage {
     }
 
     /**
-     * subscribe event fired from backend plugin
+     * subscribe to event fired from backend plugin
      * @param eventType unique type of event
      * @param eventHandler callback function to execute when event fired
      */
@@ -197,7 +197,7 @@ export class PluginPage {
     }
 
     /**
-     * unsubscribe event
+     * cancel event subscription
      * @param eventType unique type of event
      * @param eventHandler callback function registered
      */
@@ -213,7 +213,7 @@ export class PluginPage {
     }
 
     /**
-     * unsubscribe all event
+     * cancel all event subscription
      * @param eventType unique type of event
      * @param eventHandler callback function registered
      */
