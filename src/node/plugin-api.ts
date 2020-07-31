@@ -481,11 +481,29 @@ export class DefaultPluginApiHost extends AbstractBackend {
             this.context.subscriptions.push(
                 onEvent((event) => {
                     if (this.subscribedEvents.indexOf(eventType) >= 0) {
-                        this.fireTheiaEvent(eventType, event);
+                        this.resolveEventPropertiesThenFireEvent(eventType, event);
                     }
                 })
             );
         });
+    }
+
+    private async resolveEventPropertiesThenFireEvent(eventType: string, event: any) {
+        switch (eventType) {
+            case EventType.CLOUDIDE_WINDOW_ONDIDOPENTERMINAL:
+            case EventType.CLOUDIDE_WINDOW_ONDIDCLOSETERMINAL:
+            case EventType.CLOUDIDE_WINDOW_ONDIDCHANGEACTIVETERMINAL: {
+                const values = await Promise.all([event.deferredProcessId.promise, event.id.promise, event.processId]);
+                this.fireTheiaEvent(eventType, {
+                    id: values[1],
+                    processId: values[2],
+                    name: event.name
+                });
+                break;
+            }
+            default:
+                this.fireTheiaEvent(eventType, event);
+        }
     }
 
     // get plugin package.json
