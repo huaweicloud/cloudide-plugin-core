@@ -35,7 +35,7 @@
         "uuid": "^3.3.3"
     },
     "scripts": {
-        "prepare": "npm run build",
+        "prepare": "npm run eslint && npm run build",
         "build": "tsc",
         "eslint": "eslint 'src/**/*.{js,ts,tsx}' --quiet --fix"
     }

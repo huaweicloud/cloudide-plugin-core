@@ -117,6 +117,12 @@ export class PluginPage {
         }
         await Promise.all(initPromises);
         await plugin.ready();
+        this.pluginPageContext.window.document.addEventListener('mousemove', () => {
+            this.fireEventToPlugins('plugin.activity.occur', undefined);
+        });
+        document.addEventListener('keypress', () => {
+            this.fireEventToPlugins('plugin.activity.occur', undefined);
+        });
         this.frontends.forEach((frontendInstance) => {
             frontendInstance.run();
         });
@@ -245,18 +251,28 @@ export class PluginPage {
     }
 
     /**
+     * create webview on the IDE workbench
      * @param opts options to configure the dynamic webview
      * @param override replace the dynamic webview with the same viewType
      */
-    public createDynamicWebview(opts: WebviewOptions, override?: boolean): Promise<void> {
+    public async createDynamicWebview(opts: WebviewOptions, override?: boolean): Promise<void> {
         return this.call('plugin.createDynamicWebview', opts, override);
     }
 
     /**
+     * dispose webview with specific viewType
      * @param viewType view type of the dynamic webview
      */
-    public disposeDynamicWebview(viewType: string): void {
-        this.call('plugin.disposeDynamicWebview', viewType);
+    public async disposeDynamicWebview(viewType: string): Promise<void> {
+        return this.call('plugin.disposeDynamicWebview', viewType);
+    }
+
+    /**
+     * execute command registered to IDE
+     * @param id command id
+     */
+    public async executeCommand(id: string): Promise<any> {
+        return this.call('cloudide.commands.executeCommand', id);
     }
 }
 
