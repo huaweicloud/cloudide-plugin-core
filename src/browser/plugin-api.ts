@@ -271,8 +271,8 @@ export class PluginPage {
      * execute command registered to IDE
      * @param id command id
      */
-    public async executeCommand(id: string): Promise<any> {
-        return this.call('cloudide.commands.executeCommand', id);
+    public async executeCommand(id: string, ...args: any[]): Promise<any> {
+        return this.call('cloudide.commands.executeCommand', id, ...args);
     }
 }
 
