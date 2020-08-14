@@ -10,6 +10,9 @@ declare let acquireCloudidePluginApi: any;
 import { Deferred, IframeLike, exposable, expose, messaging, Messaging } from '@cloudide/messaging';
 import { WebviewOptions } from '../common/plugin-common';
 
+/**
+ * Default API declaration of plugin page
+ */
 interface CloudidePluginApi {
     getViewType: () => any;
     getExtData: () => any;
@@ -23,14 +26,39 @@ export enum LogLevel {
     ERROR = 'ERROR'
 }
 
+/**
+ * Defines abstract frontend class that all frontend must extend.
+ * A frontend is a program that runs within a web browser.
+ * Frontend expose and receive remote call from other scope.
+ */
 export abstract class AbstractFrontend {
     protected plugin: PluginPage;
 
+    /**
+     * When constructed, parameter 'plugin' is the PluginPage object.
+     * @param plugin plugin page that provide CloudIDE api
+     */
     constructor(plugin: PluginPage) {
         this.plugin = plugin;
     }
+
+    /**
+     * Called by PluginPage after the frontend is constructed.
+     * Function call to the frontend will wait until init() to be resolved.
+     * Do not make remote call in this function.
+     */
     abstract async init(): Promise<void>;
+
+    /**
+     * Called after the returned Promise of init() is resolved.
+     * In this function you can call function exposed by backend or other scope.
+     * Implementation your front logic in this function.
+     */
     abstract run(): void;
+
+    /**
+     * Called before plugin stops.
+     */
     abstract stop(): void;
 }
 
@@ -40,6 +68,10 @@ interface IFrontendConstructor<T> extends Function {
 
 const backendClientIdentifier = 'backend';
 
+/**
+ * Defines an object to provide CloudIDE API.
+ * PluginPage is a singleton in a webview page.
+ */
 export class PluginPage {
     private static instance: PluginPage;
     public readonly backendInitialized: Deferred<boolean> = new Deferred<boolean>();
@@ -73,7 +105,10 @@ export class PluginPage {
         this.initApi(this, frontends);
     }
 
-    public async ready(): Promise<boolean> {
+    /**
+     * Notify backend that webview page is loaded and all frontend classes have been initialized.
+     */
+    private async ready(): Promise<boolean> {
         const domInitialized = await this.domInitialized.promise;
         if (domInitialized) {
             this.syncInitializedStatus();
@@ -116,11 +151,11 @@ export class PluginPage {
             initPromises.push(frontendInstance.value.init());
         }
         await Promise.all(initPromises);
-        await plugin.ready();
+        await this.ready();
         this.pluginPageContext.window.document.addEventListener('mousemove', () => {
             this.fireEventToPlugins('plugin.activity.occur', undefined);
         });
-        document.addEventListener('keypress', () => {
+        this.pluginPageContext.window.document.addEventListener('keypress', () => {
             this.fireEventToPlugins('plugin.activity.occur', undefined);
         });
         this.frontends.forEach((frontendInstance) => {
@@ -128,6 +163,10 @@ export class PluginPage {
         });
     }
 
+    /**
+     * Initialize plugin page API and frontend classes
+     * @param frontends All frontend classes that need to be created.
+     */
     public static create(frontends: IFrontendConstructor<AbstractFrontend>[]): void {
         if (this.instance && this.instance.pluginPageContext) {
             return;
@@ -135,6 +174,9 @@ export class PluginPage {
         this.instance = new PluginPage(new PluginPageContext(window), frontends);
     }
 
+    /**
+     * Return plugin page API object
+     */
     public static getInstance(): PluginPage {
         return this.instance;
     }
@@ -276,6 +318,9 @@ export class PluginPage {
     }
 }
 
+/**
+ * Defines a set of methods that used to communicate between PluginPage and other scope.
+ */
 @messaging(cloudidePluginApi.getViewType())
 class PluginPageContext implements IframeLike {
     readonly window: Window;
@@ -320,6 +365,9 @@ class PluginPageContext implements IframeLike {
     }
 }
 
+/**
+ * Provides Default CloudIDE API.
+ */
 @exposable
 class DefaultPageApi extends AbstractFrontend {
     async init(): Promise<void> {

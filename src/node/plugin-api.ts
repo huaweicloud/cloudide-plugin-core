@@ -14,15 +14,42 @@ import { WebviewOptions, EventType } from '../common/plugin-common';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const packageJson = require('../../package.json');
 
+/**
+ * Defines abstract backend class that all backend must extend.
+ * A backend is a program that runs within a nodejs environment.
+ * Backend expose and receive remote call from other scope.
+ */
 export abstract class AbstractBackend {
     protected plugin: Plugin;
     protected context: cloudide.ExtensionContext;
+
+    /**
+     * When constructed, parameters are plugin objet and plugin context.
+     * @param plugin Plugin Object that provides API to call function exposed by other scope
+     * @param context Plugin context private to a plugin
+     */
     constructor(plugin: Plugin, context: cloudide.ExtensionContext) {
         this.plugin = plugin;
         this.context = context;
     }
+
+    /**
+     * Called by Plugin after the backend is constructed.
+     * Function call to the backend will wait until init() to be resolved.
+     * Do not make remote call in this function.
+     */
     abstract async init(): Promise<void>;
+
+    /**
+     * Called after the returned Promise of init() is resolved.
+     * In this function you can call function exposed by fronted.
+     * Implementation your front logic in this function.
+     */
     abstract run(): void;
+
+    /**
+     * Called before plugin stops.
+     */
     abstract stop(): void;
 }
 
@@ -32,6 +59,10 @@ interface IBackendConstructor<T> extends Function {
     new (plugin: Plugin, context: cloudide.ExtensionContext): T;
 }
 
+/**
+ * Defines an object to provide CloudIDE backend API.
+ * Plugin is a singleton.
+ */
 export class Plugin {
     private static instance: Plugin;
     readonly pageInitialized: Deferred<boolean> = new Deferred<boolean>();
@@ -72,7 +103,13 @@ export class Plugin {
         });
     }
 
-    public static createOrShow(
+    /**
+     * Initialize plugin and backend classes.
+     * @param context plugin context private to plugin.
+     * @param opts plugin main page options.
+     * @param backends all backends that need to be initialized.
+     */
+    public static create(
         context: cloudide.ExtensionContext,
         opts: WebviewOptions,
         backends: IBackendConstructor<AbstractBackend>[]
@@ -89,10 +126,16 @@ export class Plugin {
         return Plugin.instance;
     }
 
+    /**
+     * Return the plugin instance
+     */
     public static getInstance(): Plugin {
         return Plugin.instance;
     }
 
+    /**
+     * Notify frontend that backend is ready and exposed function can be called.
+     */
     public async ready(): Promise<boolean> {
         await this.pageInitialized.promise;
         this.call('cloudide.page.onBackendInitialized', true).then((result) => {
@@ -105,6 +148,9 @@ export class Plugin {
         return this.isReady.promise;
     }
 
+    /**
+     * Make a function call to frontend.
+     */
     public async call(identifier: string, ...args: any[]): Promise<any> {
         await this.pageInitialized.promise;
         const messagingInstance = Messaging.getInstance();
@@ -117,10 +163,20 @@ export class Plugin {
         return Promise.resolve(false);
     }
 
+    /**
+     * Log to backend console.
+     * @param level log level.
+     * @param message log message.
+     */
     public log(level: string, message: string): void {
         (this.backends.get(DefaultPluginApiHost) as DefaultPluginApiHost).log(level, message);
     }
 
+    /**
+     * Emit event to other plugins
+     * @param eventType event type.
+     * @param event event object.
+     */
     public fireEventToPlugins(eventType: string, event: any): void {
         (this.backends.get(DefaultPluginApiHost) as DefaultPluginApiHost).fireEventToPlugins(eventType, event);
     }
