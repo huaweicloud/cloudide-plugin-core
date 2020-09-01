@@ -8,7 +8,7 @@
 declare let acquireVsCodeApi: any;
 declare let acquireCloudidePluginApi: any;
 import { Deferred, IframeLike, exposable, expose, messaging, Messaging } from '@cloudide/messaging';
-import { WebviewOptions } from '../common/plugin-common';
+import { WebviewOptions, LogLevel } from '../common/plugin-common';
 
 /**
  * Default API declaration of plugin page
@@ -19,12 +19,6 @@ interface CloudidePluginApi {
 }
 
 const cloudidePluginApi: CloudidePluginApi = acquireCloudidePluginApi();
-
-export enum LogLevel {
-    INFO = 'INFO',
-    WARNING = 'WARNING',
-    ERROR = 'ERROR'
-}
 
 /**
  * Defines abstract frontend class that all frontend must extend.

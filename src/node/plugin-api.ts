@@ -591,7 +591,7 @@ export class DefaultPluginApiHost extends AbstractBackend {
     public onPageInit(success?: boolean): boolean {
         if (!Plugin.getInstance().pageInitialized.isPending) {
             Plugin.getInstance()
-                .call('cloudide.page.onBackendInitialized', true)
+                .call('*::cloudide.page.onBackendInitialized', true)
                 .then((result) => {
                     if (result) {
                         console.log('backend already initialized, renotify plugin frontend success.');
