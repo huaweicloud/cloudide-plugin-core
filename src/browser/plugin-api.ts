@@ -182,6 +182,21 @@ export class PluginPage {
     }
 
     /**
+     * Return frontend object initialized by plugin
+     * @param frontendClass Class definition of front class
+     */
+    public getFrontend(frontendClass: IFrontendConstructor<AbstractFrontend>): AbstractFrontend | undefined {
+        return this.frontends.get(frontendClass);
+    }
+
+    /**
+     * Return all frontends
+     */
+    public getAllFrontend(): Map<IFrontendConstructor<AbstractFrontend>, AbstractFrontend> {
+        return this.frontends;
+    }
+
+    /**
      * pass events to registeredEventHandlers
      * @param eventType unique type of event
      * @param event event object

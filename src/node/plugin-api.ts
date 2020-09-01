@@ -134,6 +134,21 @@ export class Plugin {
     }
 
     /**
+     * Return the backend object initialized by plugin
+     * @param backend Class definition of the backend
+     */
+    public getBackend(backendClass: IBackendConstructor<AbstractBackend>): AbstractBackend | undefined {
+        return this.backends.get(backendClass);
+    }
+
+    /**
+     * Return all backends
+     */
+    public getAllBackends(): Map<IBackendConstructor<AbstractBackend>, AbstractBackend> {
+        return this.backends;
+    }
+
+    /**
      * Notify frontend that backend is ready and exposed function can be called.
      */
     public async ready(): Promise<boolean> {

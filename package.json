@@ -5,7 +5,7 @@
         "cloudide",
         "plugin"
     ],
-    "version": "0.1.2",
+    "version": "0.1.3",
     "license": "SEE LICENSE IN LICENSE",
     "description": "core plugin api of cloudide frontend and backend",
     "repository": {
@@ -19,12 +19,14 @@
     "devDependencies": {
         "@cloudide/plugin": "latest",
         "@types/cheerio": "^0.22.16",
+        "@types/mocha": "^8.0.2",
         "@types/uuid": "^3.4.5",
         "@typescript-eslint/eslint-plugin": "^3.6.1",
         "@typescript-eslint/parser": "^3.6.1",
         "eslint": "^7.4.0",
         "eslint-config-prettier": "^6.11.0",
         "eslint-plugin-prettier": "^3.1.4",
+        "mocha": "^8.1.1",
         "prettier": "^2.0.5",
         "typescript": "^3.9.6"
     },
