@@ -717,7 +717,7 @@ export class DefaultPluginApiHost extends AbstractBackend {
     @expose('plugin.log')
     public log(level: string, message: string): void {
         const currentTime = new Date().toISOString().replace('T', ' ').substr(0, 19);
-        console.log(`[${level}][${currentTime}][plugin][${Plugin.getInstance().options.viewType}] ${message}`);
+        console.log(`[${level}][${currentTime}][plugin][${packageJson.name}]${message}`);
     }
 
     @call('plugin.page.onEvent')
