@@ -419,7 +419,7 @@ class PluginContainerPanel implements IframeLike {
                     };
                 })();
             </script>`);
-            $('[href], [src]').each((index, HtmlElement) => {
+            $('[href], [src]').each((index: any, HtmlElement: any) => {
                 const originSrc = $(HtmlElement).attr('src');
                 const originHref = $(HtmlElement).attr('href');
                 if (originSrc && !originSrc.startsWith('http')) {
@@ -441,8 +441,8 @@ class PluginContainerPanel implements IframeLike {
 
             return $.html();
         } else {
-            webviewUrl = new URL(this.options.viewUrl).origin;
-            iframeHtmlUri = this.options.viewUrl;
+            webviewUrl = new URL(webviewUrl).origin;
+            iframeHtmlUri = webviewUrl;
         }
         const nonce = uuid();
 
