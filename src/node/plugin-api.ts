@@ -441,8 +441,8 @@ class PluginContainerPanel implements IframeLike {
 
             return $.html();
         } else {
-            webviewUrl = new URL(webviewUrl).origin;
             iframeHtmlUri = webviewUrl;
+            webviewUrl = new URL(webviewUrl).origin;
         }
         const nonce = uuid();
 
