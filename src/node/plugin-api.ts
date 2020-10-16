@@ -8,6 +8,7 @@ import * as cloudide from '@cloudide/plugin';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as cheerio from 'cheerio';
+import * as ejs from 'ejs';
 import { v4 as uuid } from 'uuid';
 import { IframeLike, messaging, exposable, Deferred, expose, call, Messaging } from '@cloudide/messaging';
 import { WebviewOptions, EventType } from '../common/plugin-common';
@@ -234,6 +235,14 @@ export class Plugin {
 
 const backendClientIdentifier = 'backend';
 
+interface CloudIDENlsConfig {
+    locale: string;
+    availableLanguages: {
+        [pack: string]: string;
+    };
+    l10n: any;
+}
+
 /**
  * Plugin Container Panel to host html loaded from plugin
  */
@@ -246,10 +255,19 @@ class PluginContainerPanel implements IframeLike {
     private messageHandler?: (message: any) => void;
     private disposedEventHandler?: (...args: any[]) => void;
     private revealingDynamicWebview: cloudide.WebviewPanel[] = [];
+    private i18n: CloudIDENlsConfig | undefined;
 
     constructor(context: cloudide.ExtensionContext, opts: WebviewOptions) {
         this.context = context;
         this.options = opts;
+        try {
+            if (process.env.VSCODE_NLS_CONFIG) {
+                this.i18n = JSON.parse(process.env.VSCODE_NLS_CONFIG) as CloudIDENlsConfig;
+            }
+        } catch (e) {
+            console.error(e);
+        }
+
         // create default plugin page webview panel
         this.defaultPluginPanel = this.createWebviewPanel(this.options);
         this.update(this.options.viewType, this.options.viewUrl);
@@ -397,8 +415,31 @@ class PluginContainerPanel implements IframeLike {
             const localEntryPoint = webviewUrl.replace('local:', '');
             const pathPrefix = localEntryPoint.substring(0, localEntryPoint.lastIndexOf('/'));
             const localEntryPath = path.join(extensionPath, localEntryPoint);
-            const data = fs.readFileSync(localEntryPath, 'utf8');
-            const $ = cheerio.load(data);
+            let htmlData = fs.readFileSync(localEntryPath, 'utf8');
+            // load i18n resources
+            if (this.i18n) {
+                const localizedNslFile = path.join(extensionPath, `package.nls.${this.i18n.locale}.json`);
+                const defaultNslFile = path.join(extensionPath, `package.nls.json`);
+                if (fs.existsSync(localizedNslFile)) {
+                    try {
+                        this.i18n.l10n = JSON.parse(fs.readFileSync(localizedNslFile, 'utf8'));
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+                if (!this.i18n.l10n && fs.existsSync(defaultNslFile)) {
+                    try {
+                        this.i18n.l10n = JSON.parse(fs.readFileSync(defaultNslFile, 'utf8'));
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+                // render template to html
+                if (this.options.templateEngine === 'ejs') {
+                    htmlData = ejs.render(htmlData, { l10n: this.i18n.l10n });
+                }
+            }
+            const $ = cheerio.load(htmlData);
             $('head').prepend(`<script>
                 const acquireCloudidePluginApi = (function() {
                     let acquired = false;
@@ -701,7 +742,7 @@ export class DefaultPluginApiHost extends AbstractBackend {
     }
 
     @expose('cloudide')
-    public theiaWindowApi(module: string, property: string, ...args: any[]): any {
+    public theiaApi(module: string, property: string, ...args: any[]): any {
         if (!module || !property) {
             return Promise.reject('module or property not specified.');
         }

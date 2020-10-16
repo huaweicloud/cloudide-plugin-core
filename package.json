@@ -19,6 +19,7 @@
     "devDependencies": {
         "@cloudide/plugin": "latest",
         "@types/cheerio": "^0.22.16",
+        "@types/ejs": "^3.0.4",
         "@types/mocha": "^8.0.2",
         "@types/uuid": "^3.4.5",
         "@typescript-eslint/eslint-plugin": "^3.6.1",
@@ -33,6 +34,7 @@
     "dependencies": {
         "@cloudide/messaging": "latest",
         "cheerio": "^1.0.0-rc.3",
+        "ejs": "^3.1.5",
         "reflect-metadata": "^0.1.13",
         "uuid": "^3.3.3"
     },

@@ -49,6 +49,11 @@ export interface WebviewOptions {
      * Getting extra data using 'plugin.cloudidePluginApi.getExtData()' in frontend.
      */
     extData?: any;
+
+    /**
+     * Template engine to render the html, if undefined, only pure html is supported.
+     */
+    templateEngine?: 'ejs' | 'pug';
 }
 
 export enum EventType {
