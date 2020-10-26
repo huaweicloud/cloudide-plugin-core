@@ -76,6 +76,7 @@ export class PluginPage {
     private registeredEventHandlers: Map<string, ((eventType: string, event: any) => void)[]> = new Map();
     private extensionPath?: string;
     private frontends: Map<IFrontendConstructor<AbstractFrontend>, AbstractFrontend> = new Map();
+    private activityOccured = false;
     private constructor(pluginPageContext: PluginPageContext, frontends: IFrontendConstructor<AbstractFrontend>[]) {
         this.pluginPageContext = pluginPageContext;
         this.cloudidePluginApi = cloudidePluginApi;
@@ -146,15 +147,23 @@ export class PluginPage {
         }
         await Promise.all(initPromises);
         await this.ready();
-        this.pluginPageContext.window.document.addEventListener('mousemove', () => {
-            this.fireEventToPlugins('plugin.activity.occur', undefined);
-        });
-        this.pluginPageContext.window.document.addEventListener('keypress', () => {
-            this.fireEventToPlugins('plugin.activity.occur', undefined);
-        });
         this.frontends.forEach((frontendInstance) => {
             frontendInstance.run();
         });
+
+        this.pluginPageContext.window.document.addEventListener('mousemove', () => {
+            this.activityOccured = true;
+        });
+        this.pluginPageContext.window.document.addEventListener('keypress', () => {
+            this.activityOccured = true;
+        });
+
+        setInterval(() => {
+            if (this.activityOccured) {
+                this.fireEventToPlugins('plugin.activity.occur', undefined);
+            }
+            this.activityOccured = false;
+        }, 60000);
     }
 
     /**
