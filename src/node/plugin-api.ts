@@ -475,7 +475,7 @@ class PluginContainerPanel implements IframeLike {
                             },
                             getExtData: function() {
                                 return extData;
-                            }
+                            },
                             getI18n: function() {
                                 return i18n;
                             }
