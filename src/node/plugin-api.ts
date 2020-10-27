@@ -9,6 +9,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as cheerio from 'cheerio';
 import * as ejs from 'ejs';
+import * as pug from 'pug';
 import { v4 as uuid } from 'uuid';
 import { IframeLike, messaging, exposable, Deferred, expose, call, Messaging } from '@cloudide/messaging';
 import { WebviewOptions, EventType } from '../common/plugin-common';
@@ -437,6 +438,8 @@ class PluginContainerPanel implements IframeLike {
                 // render template to html
                 if (this.options.templateEngine === 'ejs') {
                     htmlData = ejs.render(htmlData, { l10n: this.i18n.l10n });
+                } else if (this.options.templateEngine === 'pug') {
+                    htmlData = pug.render(htmlData, { l10n: this.i18n.l10n });
                 }
             }
             const $ = cheerio.load(htmlData);
