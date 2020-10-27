@@ -46,12 +46,15 @@ export interface WebviewOptions {
 
     /**
      * Extra data passed to the view.
+     * extData will be passed to the templateEngine if enabled
      * Getting extra data using 'plugin.cloudidePluginApi.getExtData()' in frontend.
      */
     extData?: any;
 
     /**
      * Template engine to render the html, if undefined, only pure html is supported.
+     * l10n and extData are built-in variables.
+     * l10n stores all locialization items of specific locale
      */
     templateEngine?: 'ejs' | 'pug';
 }

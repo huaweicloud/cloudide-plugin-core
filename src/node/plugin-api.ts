@@ -437,9 +437,9 @@ class PluginContainerPanel implements IframeLike {
                 }
                 // render template to html
                 if (this.options.templateEngine === 'ejs') {
-                    htmlData = ejs.render(htmlData, { l10n: this.i18n.l10n });
+                    htmlData = ejs.render(htmlData, { l10n: this.i18n.l10n, extData });
                 } else if (this.options.templateEngine === 'pug') {
-                    htmlData = pug.render(htmlData, { l10n: this.i18n.l10n });
+                    htmlData = pug.render(htmlData, { l10n: this.i18n.l10n, extData });
                 }
             }
             const $ = cheerio.load(htmlData);
