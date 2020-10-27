@@ -16,6 +16,7 @@ import { WebviewOptions, LogLevel } from '../common/plugin-common';
 interface CloudidePluginApi {
     getViewType: () => any;
     getExtData: () => any;
+    getI18n: () => any;
 }
 
 const cloudidePluginApi: CloudidePluginApi = acquireCloudidePluginApi();
@@ -200,7 +201,7 @@ export class PluginPage {
     }
 
     /**
-     * pass events to registeredEventHandlers
+     * Pass events to registeredEventHandlers
      * @param eventType unique type of event
      * @param event event object
      */
@@ -214,7 +215,15 @@ export class PluginPage {
     }
 
     /**
-     * broadcast event to plugins
+     * Return localized messaging according to the locale config
+     * @param key key configuration stored in package.nls.*.json
+     */
+    public localize(key: string): string {
+        return this.cloudidePluginApi.getI18n()?.l10n[key];
+    }
+
+    /**
+     * Broadcast event to plugins
      * @param eventType unique type of event
      * @param event event object
      */
@@ -223,7 +232,7 @@ export class PluginPage {
     }
 
     /**
-     * call remote function exposed on backend
+     * Call remote function exposed on backend
      * @param func function name of remote function
      * @param args arguments passed to remote function
      * @returns Promise<any>
@@ -244,7 +253,7 @@ export class PluginPage {
     }
 
     /**
-     * subscribe to event fired from backend plugin
+     * Subscribe to event fired from backend plugin
      * @param eventType unique type of event
      * @param eventHandler callback function to execute when event fired
      */
@@ -263,7 +272,7 @@ export class PluginPage {
     }
 
     /**
-     * cancel event subscription
+     * Cancel event subscription
      * @param eventType unique type of event
      * @param eventHandler callback function registered
      */
@@ -279,7 +288,7 @@ export class PluginPage {
     }
 
     /**
-     * cancel all event subscription
+     * Cancel all event subscription
      * @param eventType unique type of event
      * @param eventHandler callback function registered
      */
@@ -291,7 +300,7 @@ export class PluginPage {
     }
 
     /**
-     * log to backend
+     * Log to backend
      * @param level log level
      * @param message log message
      */
@@ -300,7 +309,7 @@ export class PluginPage {
     }
 
     /**
-     * convert local resource path to webview path
+     * Convert local resource path to webview path
      * @param path relative path to the plugin root directory
      */
     public async toWebviewResource(path: string): Promise<string> {
@@ -311,7 +320,7 @@ export class PluginPage {
     }
 
     /**
-     * create webview on the IDE workbench
+     * Create webview on the IDE workbench
      * @param opts options to configure the dynamic webview
      * @param override replace the dynamic webview with the same viewType
      */
@@ -320,7 +329,7 @@ export class PluginPage {
     }
 
     /**
-     * dispose webview with specific viewType
+     * Dispose webview with specific viewType
      * @param viewType view type of the dynamic webview
      */
     public async disposeDynamicWebview(viewType: string): Promise<void> {
@@ -328,7 +337,7 @@ export class PluginPage {
     }
 
     /**
-     * execute command registered to IDE
+     * Execute command registered to IDE
      * @param id command id
      */
     public async executeCommand(id: string, ...args: any[]): Promise<any> {

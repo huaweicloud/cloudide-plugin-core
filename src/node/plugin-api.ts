@@ -198,6 +198,10 @@ export class Plugin {
         (this.backends.get(DefaultPluginApiHost) as DefaultPluginApiHost).fireEventToPlugins(eventType, event);
     }
 
+    public localize(key: string): string {
+        return this.container.getI18n()?.l10n[key];
+    }
+
     revive(panel: cloudide.WebviewPanel, context: cloudide.ExtensionContext, opts: WebviewOptions, state: any): void {
         if (this.container && this.container.isDisposed()) {
             if (typeof panel.showOptions === 'object') {
@@ -241,7 +245,7 @@ interface CloudIDENlsConfig {
     availableLanguages: {
         [pack: string]: string;
     };
-    l10n: any;
+    l10n?: any;
 }
 
 /**
@@ -267,6 +271,26 @@ class PluginContainerPanel implements IframeLike {
             }
         } catch (e) {
             console.error(e);
+        }
+
+        this.i18n = this.i18n || { locale: 'en', availableLanguages: { '*': 'en' } };
+
+        // load i18n resources
+        const localizedNlsFile = path.join(this.context.extensionPath, `package.nls.${this.i18n.locale}.json`);
+        const defaultNlsFile = path.join(this.context.extensionPath, `package.nls.json`);
+        if (fs.existsSync(localizedNlsFile)) {
+            try {
+                this.i18n.l10n = JSON.parse(fs.readFileSync(localizedNlsFile, 'utf8'));
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        if (!this.i18n.l10n && fs.existsSync(defaultNlsFile)) {
+            try {
+                this.i18n.l10n = JSON.parse(fs.readFileSync(defaultNlsFile, 'utf8'));
+            } catch (e) {
+                console.error(e);
+            }
         }
 
         // create default plugin page webview panel
@@ -297,6 +321,12 @@ class PluginContainerPanel implements IframeLike {
 
     public createWebviewPanel(opts: WebviewOptions): cloudide.WebviewPanel {
         this.options = opts;
+
+        if (opts.title.startsWith('%') && opts.title.endsWith('%')) {
+            const keyOfTitle = opts.title.substring(1, opts.title.length - 1);
+            opts.title = this.i18n?.l10n[keyOfTitle] || opts.title;
+        }
+
         const panel = cloudide.window.createCloudWebviewPanel(
             opts.viewType,
             opts.title,
@@ -382,6 +412,10 @@ class PluginContainerPanel implements IframeLike {
         return this.options;
     }
 
+    public getI18n() {
+        return this.i18n;
+    }
+
     public dispose() {
         this.dispossed = true;
         this.defaultPluginPanel.dispose();
@@ -417,36 +451,19 @@ class PluginContainerPanel implements IframeLike {
             const pathPrefix = localEntryPoint.substring(0, localEntryPoint.lastIndexOf('/'));
             const localEntryPath = path.join(extensionPath, localEntryPoint);
             let htmlData = fs.readFileSync(localEntryPath, 'utf8');
-            // load i18n resources
-            if (this.i18n) {
-                const localizedNslFile = path.join(extensionPath, `package.nls.${this.i18n.locale}.json`);
-                const defaultNslFile = path.join(extensionPath, `package.nls.json`);
-                if (fs.existsSync(localizedNslFile)) {
-                    try {
-                        this.i18n.l10n = JSON.parse(fs.readFileSync(localizedNslFile, 'utf8'));
-                    } catch (e) {
-                        console.error(e);
-                    }
-                }
-                if (!this.i18n.l10n && fs.existsSync(defaultNslFile)) {
-                    try {
-                        this.i18n.l10n = JSON.parse(fs.readFileSync(defaultNslFile, 'utf8'));
-                    } catch (e) {
-                        console.error(e);
-                    }
-                }
-                // render template to html
-                if (this.options.templateEngine === 'ejs') {
-                    htmlData = ejs.render(htmlData, { l10n: this.i18n.l10n, extData });
-                } else if (this.options.templateEngine === 'pug') {
-                    htmlData = pug.render(htmlData, { l10n: this.i18n.l10n, extData });
-                }
+
+            // render template to html
+            if (this.options.templateEngine === 'ejs') {
+                htmlData = ejs.render(htmlData, { l10n: this.i18n?.l10n, extData });
+            } else if (this.options.templateEngine === 'pug') {
+                htmlData = pug.render(htmlData, { l10n: this.i18n?.l10n, extData });
             }
             const $ = cheerio.load(htmlData);
             $('head').prepend(`<script>
                 const acquireCloudidePluginApi = (function() {
                     let acquired = false;
                     let extData = ${extData ? `JSON.parse(${JSON.stringify(JSON.stringify(extData))})` : undefined};
+                    let i18n = ${this.i18n ? `JSON.parse(${JSON.stringify(JSON.stringify(this.i18n))})` : undefined};
                     return () => {
                         if (acquired) {
 						    throw new Error('An instance of the CloudIDE Plugin API has already been acquired');
@@ -458,6 +475,9 @@ class PluginContainerPanel implements IframeLike {
                             },
                             getExtData: function() {
                                 return extData;
+                            }
+                            getI18n: function() {
+                                return i18n;
                             }
                         });
                     };
