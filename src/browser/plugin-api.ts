@@ -8,7 +8,7 @@
 declare let acquireVsCodeApi: any;
 declare let acquireCloudidePluginApi: any;
 import { Deferred, IframeLike, exposable, expose, messaging, Messaging } from '@cloudide/messaging';
-import { WebviewOptions, LogLevel } from '../common/plugin-common';
+import { WebviewOptions, LogLevel, format } from '../common/plugin-common';
 
 /**
  * Default API declaration of plugin page
@@ -218,8 +218,12 @@ export class PluginPage {
      * Return localized messaging according to the locale config
      * @param key key configuration stored in package.nls.*.json
      */
-    public localize(key: string): string {
-        return this.cloudidePluginApi.getI18n()?.l10n[key];
+    public localize(key: string, ...args: any[]): string {
+        const message = this.cloudidePluginApi.getI18n()?.l10n[key];
+        if (!message) {
+            return '';
+        }
+        return format(message, args);
     }
 
     /**

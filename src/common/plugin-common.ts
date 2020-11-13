@@ -101,3 +101,24 @@ export enum EventType {
     CLOUDIDE_WINDOW_ONDIDCLOSETERMINAL = 'cloudide.window.onDidCloseTerminal',
     CLOUDIDE_WINDOW_ONDIDOPENTERMINAL = 'cloudide.window.onDidOpenTerminal'
 }
+
+// copied and modified from https://github.com/microsoft/vscode-nls/blob/master/src/common/common.ts#L100
+export function format(message: string, args: any[]): string {
+    let result = message;
+    if (args.length === 0) {
+        result = message;
+    } else {
+        result = message.replace(/\{(\d+)\}/g, (match, rest) => {
+            const index = rest[0];
+            const arg = args[index];
+            let replacement = match;
+            if (typeof arg === 'string') {
+                replacement = arg;
+            } else if (typeof arg === 'number' || typeof arg === 'boolean' || arg === void 0 || arg === null) {
+                replacement = String(arg);
+            }
+            return replacement;
+        });
+    }
+    return result;
+}

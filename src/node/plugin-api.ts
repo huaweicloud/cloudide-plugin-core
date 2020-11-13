@@ -12,7 +12,7 @@ import * as ejs from 'ejs';
 import * as pug from 'pug';
 import { v4 as uuid } from 'uuid';
 import { IframeLike, messaging, exposable, Deferred, expose, call, Messaging } from '@cloudide/messaging';
-import { WebviewOptions, EventType } from '../common/plugin-common';
+import { WebviewOptions, EventType, format } from '../common/plugin-common';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const packageJson = require('../../package.json');
 
@@ -198,8 +198,12 @@ export class Plugin {
         (this.backends.get(DefaultPluginApiHost) as DefaultPluginApiHost).fireEventToPlugins(eventType, event);
     }
 
-    public localize(key: string): string {
-        return this.container.getI18n()?.l10n[key];
+    public localize(key: string, ...args: any[]): string {
+        const message = this.container.getI18n()?.l10n[key];
+        if (!message) {
+            return '';
+        }
+        return format(message, args);
     }
 
     revive(panel: cloudide.WebviewPanel, context: cloudide.ExtensionContext, opts: WebviewOptions, state: any): void {
