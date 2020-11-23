@@ -17,6 +17,7 @@ interface CloudidePluginApi {
     getViewType: () => any;
     getExtData: () => any;
     getI18n: () => any;
+    getExtensionPath: () => any;
 }
 
 const cloudidePluginApi: CloudidePluginApi = acquireCloudidePluginApi();
@@ -81,6 +82,7 @@ export class PluginPage {
     private constructor(pluginPageContext: PluginPageContext, frontends: IFrontendConstructor<AbstractFrontend>[]) {
         this.pluginPageContext = pluginPageContext;
         this.cloudidePluginApi = cloudidePluginApi;
+        this.extensionPath = this.cloudidePluginApi.getExtensionPath();
         const doc = this.pluginPageContext.window.document;
         doc.addEventListener('keydown', (event: KeyboardEvent) => {
             switch (event.keyCode) {
@@ -316,10 +318,7 @@ export class PluginPage {
      * Convert local resource path to webview path
      * @param path relative path to the plugin root directory
      */
-    public async toWebviewResource(path: string): Promise<string> {
-        if (!this.extensionPath) {
-            this.extensionPath = await this.call('plugin.getExtensionPath');
-        }
+    public toWebviewResource(path: string): string {
         return `theia-resource/file${this.extensionPath}/${path}`.split(/\/+/).join('/');
     }
 

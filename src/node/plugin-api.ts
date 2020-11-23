@@ -468,6 +468,7 @@ class PluginContainerPanel implements IframeLike {
                     let acquired = false;
                     let extData = ${extData ? `JSON.parse(${JSON.stringify(JSON.stringify(extData))})` : undefined};
                     let i18n = ${this.i18n ? `JSON.parse(${JSON.stringify(JSON.stringify(this.i18n))})` : undefined};
+                    let extensionPath = '${this.context.extensionPath}'
                     return () => {
                         if (acquired) {
 						    throw new Error('An instance of the CloudIDE Plugin API has already been acquired');
@@ -482,6 +483,9 @@ class PluginContainerPanel implements IframeLike {
                             },
                             getI18n: function() {
                                 return i18n;
+                            },
+                            getExtensionPath: function() {
+                                return extensionPath;
                             }
                         });
                     };
@@ -761,11 +765,6 @@ export class DefaultPluginApiHost extends AbstractBackend {
         if (this.huaweiCommonApi) {
             this.huaweiCommonApi.fireEvent(eventType, event);
         }
-    }
-
-    @expose('plugin.getExtensionPath')
-    public getExtensionPath(): string {
-        return Plugin.getInstance().container.context.extensionPath;
     }
 
     @expose('cloudide')
