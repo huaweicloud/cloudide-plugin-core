@@ -14,10 +14,10 @@ import { WebviewOptions, LogLevel, format } from '../common/plugin-common';
  * Default API declaration of plugin page
  */
 interface CloudidePluginApi {
-    getViewType: () => any;
+    getViewType: () => string;
     getExtData: () => any;
-    getI18n: () => any;
-    getExtensionPath: () => any;
+    getI18n: () => { locale: string; l10n: any };
+    getExtensionPath: () => string;
 }
 
 const cloudidePluginApi: CloudidePluginApi = acquireCloudidePluginApi();
