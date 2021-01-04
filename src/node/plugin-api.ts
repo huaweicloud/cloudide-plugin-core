@@ -299,7 +299,11 @@ class PluginContainerPanel implements IframeLike {
 
         // create default plugin page webview panel
         this.defaultPluginPanel = this.createWebviewPanel(this.options);
-        this.update(this.options.viewType, this.options.viewUrl);
+        this.defaultPluginPanel.webview.html = this.renderHtml(
+            this.options.viewType,
+            this.options.viewUrl,
+            this.options.extData
+        );
         this.defaultPluginPanel.onDidDispose(() => this.dispose());
         this.defaultPluginPanel.webview.onDidReceiveMessage((message) => {
             this.handleMessage(message);
@@ -317,10 +321,6 @@ class PluginContainerPanel implements IframeLike {
         if (this.messageHandler) {
             this.messageHandler(message);
         }
-    }
-
-    private update(viewType: string, webviewUrl: string) {
-        this.defaultPluginPanel.webview.html = this.renderHtml(viewType, webviewUrl);
     }
 
     public createWebviewPanel(opts: WebviewOptions): cloudide.WebviewPanel {
