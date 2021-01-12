@@ -12,7 +12,7 @@ import * as ejs from 'ejs';
 import * as pug from 'pug';
 import { v4 as uuid } from 'uuid';
 import { IframeLike, messaging, exposable, Deferred, expose, call, Messaging } from '@cloudide/messaging';
-import { WebviewOptions, EventType, format } from '../common/plugin-common';
+import { WebviewOptions, EventType, format, LogLevel } from '../common/plugin-common';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const packageJson = require('../../package.json');
 
@@ -185,7 +185,7 @@ export class Plugin {
      * @param level log level.
      * @param message log message.
      */
-    public log(level: string, message: string): void {
+    public log(level: LogLevel, message: string): void {
         (this.backends.get(DefaultPluginApiHost) as DefaultPluginApiHost).log(level, message);
     }
 
@@ -782,9 +782,15 @@ export class DefaultPluginApiHost extends AbstractBackend {
     }
 
     @expose('plugin.log')
-    public log(level: string, message: string): void {
+    public log(level: LogLevel, message: string): void {
         const currentTime = new Date().toISOString().replace('T', ' ').substr(0, 19);
-        console.log(`[${level}][${currentTime}][plugin][${packageJson.name}]${message}`);
+        const consoleFn = Object.getOwnPropertyDescriptor(console, level.toLowerCase());
+        const logMessage = `[${level}][${currentTime}][plugin][${packageJson.name}]${message}`;
+        if (consoleFn) {
+            consoleFn.value(logMessage);
+        } else {
+            console.log(logMessage);
+        }
     }
 
     @call('plugin.page.onEvent')
