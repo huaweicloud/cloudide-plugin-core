@@ -12,7 +12,9 @@ import * as ejs from 'ejs';
 import * as pug from 'pug';
 import { v4 as uuid } from 'uuid';
 import { IframeLike, messaging, exposable, Deferred, expose, call, Messaging } from '@cloudide/messaging';
-import { WebviewOptions, EventType, format, LogLevel } from '../common/plugin-common';
+import { WebviewOptions, EventType, LogLevel } from '../common/plugin-common';
+import { CloudIDENlsConfig, nlsConfig, format } from '@cloudide/nls';
+
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const packageJson = require('../../package.json');
 
@@ -244,14 +246,6 @@ export class Plugin {
 
 const backendClientIdentifier = 'backend';
 
-interface CloudIDENlsConfig {
-    locale: string;
-    availableLanguages: {
-        [pack: string]: string;
-    };
-    l10n?: any;
-}
-
 /**
  * Plugin Container Panel to host html loaded from plugin
  */
@@ -264,38 +258,11 @@ class PluginContainerPanel implements IframeLike {
     private messageHandler?: (message: any) => void;
     private disposedEventHandler?: (...args: any[]) => void;
     private revealingDynamicWebview: cloudide.WebviewPanel[] = [];
-    private i18n: CloudIDENlsConfig | undefined;
+    private i18n: CloudIDENlsConfig = nlsConfig;
 
     constructor(context: cloudide.ExtensionContext, opts: WebviewOptions) {
         this.context = context;
         this.options = opts;
-        try {
-            if (process.env.VSCODE_NLS_CONFIG) {
-                this.i18n = JSON.parse(process.env.VSCODE_NLS_CONFIG) as CloudIDENlsConfig;
-            }
-        } catch (e) {
-            console.error(e);
-        }
-
-        this.i18n = this.i18n || { locale: 'en', availableLanguages: { '*': 'en' } };
-
-        // load i18n resources
-        const localizedNlsFile = path.join(this.context.extensionPath, `package.nls.${this.i18n.locale}.json`);
-        const defaultNlsFile = path.join(this.context.extensionPath, `package.nls.json`);
-        if (fs.existsSync(localizedNlsFile)) {
-            try {
-                this.i18n.l10n = JSON.parse(fs.readFileSync(localizedNlsFile, 'utf8'));
-            } catch (e) {
-                console.error(e);
-            }
-        }
-        if (!this.i18n.l10n && fs.existsSync(defaultNlsFile)) {
-            try {
-                this.i18n.l10n = JSON.parse(fs.readFileSync(defaultNlsFile, 'utf8'));
-            } catch (e) {
-                console.error(e);
-            }
-        }
 
         // create default plugin page webview panel
         this.defaultPluginPanel = this.createWebviewPanel(this.options);

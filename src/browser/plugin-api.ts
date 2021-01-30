@@ -8,7 +8,8 @@
 declare let acquireVsCodeApi: any;
 declare let acquireCloudidePluginApi: any;
 import { Deferred, IframeLike, exposable, expose, messaging, Messaging } from '@cloudide/messaging';
-import { WebviewOptions, LogLevel, format } from '../common/plugin-common';
+import { WebviewOptions, LogLevel } from '../common/plugin-common';
+import { format } from '@cloudide/nls';
 
 /**
  * Default API declaration of plugin page
