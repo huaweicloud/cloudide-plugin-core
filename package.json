@@ -34,7 +34,7 @@
     },
     "dependencies": {
         "@cloudide/messaging": "latest",
-        "@cloudide/nls": "0.0.6",
+        "@cloudide/nls": "latest",
         "cheerio": "^1.0.0-rc.3",
         "ejs": "^3.1.5",
         "pug": "^3.0.0",
