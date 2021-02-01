@@ -274,6 +274,7 @@ class PluginContainerPanel implements IframeLike {
         // compatiable with plugin generated with generator of previous version (version < 0.2.3)
         if (!this.i18n.l10n) {
             initNlsConfig(context.extensionPath);
+            this.i18n = nlsConfig;
         }
 
         // create default plugin page webview panel
@@ -307,7 +308,7 @@ class PluginContainerPanel implements IframeLike {
 
         if (opts.title.startsWith('%') && opts.title.endsWith('%')) {
             const keyOfTitle = opts.title.substring(1, opts.title.length - 1);
-            opts.title = this.i18n?.l10n[keyOfTitle] || opts.title;
+            opts.title = this.i18n.l10n[keyOfTitle] || opts.title;
         }
 
         const panel = cloudide.window.createCloudWebviewPanel(
