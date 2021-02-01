@@ -13,7 +13,7 @@ import * as pug from 'pug';
 import { v4 as uuid } from 'uuid';
 import { IframeLike, messaging, exposable, Deferred, expose, call, Messaging } from '@cloudide/messaging';
 import { WebviewOptions, EventType, LogLevel } from '../common/plugin-common';
-import { CloudIDENlsConfig, nlsConfig } from '@cloudide/nls';
+import { CloudIDENlsConfig, nlsConfig, initNlsConfig } from '@cloudide/nls';
 import { format } from '@cloudide/nls/lib/common/common';
 
 /**
@@ -270,6 +270,11 @@ class PluginContainerPanel implements IframeLike {
     constructor(context: cloudide.ExtensionContext, opts: WebviewOptions) {
         this.context = context;
         this.options = opts;
+
+        // compatiable with plugin generated with generator of previous version (version < 0.2.3)
+        if (!this.i18n.l10n) {
+            initNlsConfig(context.extensionPath);
+        }
 
         // create default plugin page webview panel
         this.defaultPluginPanel = this.createWebviewPanel(this.options);
