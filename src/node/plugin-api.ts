@@ -13,7 +13,8 @@ import * as pug from 'pug';
 import { v4 as uuid } from 'uuid';
 import { IframeLike, messaging, exposable, Deferred, expose, call, Messaging } from '@cloudide/messaging';
 import { WebviewOptions, EventType, LogLevel } from '../common/plugin-common';
-import { CloudIDENlsConfig, nlsConfig, format } from '@cloudide/nls';
+import { CloudIDENlsConfig, nlsConfig } from '@cloudide/nls';
+import { format } from '@cloudide/nls/lib/common/common';
 
 /**
  * Defines abstract backend class that all backend must extend.
