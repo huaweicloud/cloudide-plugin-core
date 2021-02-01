@@ -15,9 +15,6 @@ import { IframeLike, messaging, exposable, Deferred, expose, call, Messaging } f
 import { WebviewOptions, EventType, LogLevel } from '../common/plugin-common';
 import { CloudIDENlsConfig, nlsConfig, format } from '@cloudide/nls';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const packageJson = require('../../package.json');
-
 /**
  * Defines abstract backend class that all backend must extend.
  * A backend is a program that runs within a nodejs environment.
@@ -68,6 +65,7 @@ interface IBackendConstructor<T> extends Function {
  * Plugin is a singleton.
  */
 export class Plugin {
+    public readonly manifest: any = {};
     private static instance: Plugin;
     readonly pageInitialized: Deferred<boolean> = new Deferred<boolean>();
     private readonly isReady: Deferred<boolean> = new Deferred<boolean>();
@@ -76,6 +74,14 @@ export class Plugin {
     private backends: Map<IBackendConstructor<AbstractBackend>, AbstractBackend>;
 
     private constructor(pluginContainerPanel: PluginContainerPanel, backends: IBackendConstructor<AbstractBackend>[]) {
+        const manifestPath = path.join(pluginContainerPanel.context.extensionPath, 'package.json');
+        try {
+            if (fs.existsSync(manifestPath)) {
+                this.manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+            }
+        } catch (e) {
+            console.error(e);
+        }
         this._container = pluginContainerPanel;
         this._options = pluginContainerPanel.opts;
         this.backends = new Map<IBackendConstructor<AbstractBackend>, AbstractBackend>();
@@ -623,7 +629,7 @@ export class DefaultPluginApiHost extends AbstractBackend {
     // get plugin package.json
     @expose('plugin.packageJson')
     public getPackageJson(): any {
-        return packageJson;
+        return this.plugin.manifest;
     }
 
     @expose('plugin.onPageInit')
@@ -752,7 +758,7 @@ export class DefaultPluginApiHost extends AbstractBackend {
     public log(level: LogLevel, message: string): void {
         const currentTime = new Date().toISOString().replace('T', ' ').substr(0, 19);
         const consoleFn = Object.getOwnPropertyDescriptor(console, level.toLowerCase());
-        const logMessage = `[${level}][${currentTime}][plugin][${packageJson.name}]${message}`;
+        const logMessage = `[${level}][${currentTime}][plugin][${this.plugin.manifest?.name}]${message}`;
         if (consoleFn) {
             consoleFn.value(logMessage);
         } else {
@@ -767,7 +773,8 @@ export class DefaultPluginApiHost extends AbstractBackend {
         if (
             type === beforeUninstallEventType &&
             event &&
-            (event.pluginId as string).toLowerCase() === `${packageJson.publisher}.${packageJson.name}`.toLowerCase()
+            (event.pluginId as string).toLowerCase() ===
+                `${this.plugin.manifest?.publisher}.${this.plugin.manifest?.name}`.toLowerCase()
         ) {
             Plugin.getInstance().stop();
         }
