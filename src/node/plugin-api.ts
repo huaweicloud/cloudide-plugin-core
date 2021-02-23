@@ -125,6 +125,9 @@ export class Plugin {
         opts: WebviewOptions,
         backends: IBackendConstructor<AbstractBackend>[]
     ): Plugin {
+        if (typeof (cloudide.window as any).registerWebviewAsPluginPage === 'function') {
+            (cloudide.window as any).registerWebviewAsPluginPage(opts.viewType);
+        }
         if (Plugin.instance && !Plugin.instance.container.isDisposed()) {
             Plugin.instance.container.defaultPluginPanel.reveal(
                 opts.targetArea,
