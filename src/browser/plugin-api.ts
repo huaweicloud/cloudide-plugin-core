@@ -250,7 +250,7 @@ export class PluginPage {
         if (typeof func !== 'string') {
             funcName = func.name as string;
         }
-        if (funcName.startsWith('theia') || funcName.startsWith('cloudide')) {
+        if (funcName.startsWith('theia.') || funcName.startsWith('cloudide.')) {
             const funcCallArry = funcName.split('.');
             const argsForTheia = funcCallArry.slice(1);
             argsForTheia.push(...args);

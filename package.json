@@ -14,7 +14,9 @@
     },
     "main": "",
     "files": [
-        "lib"
+        "lib/browser",
+        "lib/common",
+        "lib/node"
     ],
     "devDependencies": {
         "@cloudide/plugin": "latest",
@@ -30,6 +32,7 @@
         "eslint-plugin-prettier": "^3.1.4",
         "mocha": "^8.1.1",
         "prettier": "^2.0.5",
+        "ts-node": "^9.1.1",
         "typescript": "^3.9.6"
     },
     "dependencies": {
@@ -42,8 +45,9 @@
         "uuid": "^3.3.3"
     },
     "scripts": {
-        "prepare": "npm run eslint && npm run build",
+        "prepare": "npm run eslint && npm run build && npm run test",
         "build": "tsc",
-        "eslint": "eslint 'src/**/*.{js,ts,tsx}' --quiet --fix"
+        "eslint": "eslint 'src/**/*.{js,ts,tsx}' --quiet --fix",
+        "test": "mocha"
     }
 }
