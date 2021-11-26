@@ -206,6 +206,7 @@ export class Plugin {
      * @param eventType event type.
      * @param event event object.
      */
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     public fireEventToPlugins(eventType: string, event: any): void {
         (this.backends.get(DefaultPluginApiHost) as DefaultPluginApiHost).fireEventToPlugins(eventType, event);
     }
@@ -266,7 +267,7 @@ class PluginContainerPanel implements IframeLike {
     private dispossed = false;
     private options: WebviewOptions;
     private messageHandler?: (message: any) => void;
-    private disposedEventHandler?: (...args: any[]) => void;
+    private disposedEventHandlers: ((...args: any[]) => void)[] = [];
     private revealingDynamicWebview: cloudide.WebviewPanel[] = [];
     private i18n: CloudIDENlsConfig = nlsConfig;
 
@@ -412,13 +413,15 @@ class PluginContainerPanel implements IframeLike {
         });
 
         // fire event
-        if (this.disposedEventHandler) {
-            this.disposedEventHandler();
+        if (this.disposedEventHandlers) {
+            this.disposedEventHandlers.forEach(async (eventHandler) => {
+                eventHandler();
+            });
         }
     }
 
     onDispose(disposedEventHandler: (...args: any[]) => void) {
-        this.disposedEventHandler = disposedEventHandler;
+        this.disposedEventHandlers.push(disposedEventHandler);
     }
 
     public isDisposed() {

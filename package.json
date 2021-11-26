@@ -5,7 +5,7 @@
         "cloudide",
         "plugin"
     ],
-    "version": "0.2.6",
+    "version": "0.2.7",
     "license": "SEE LICENSE IN LICENSE",
     "description": "core plugin api of cloudide frontend and backend",
     "repository": {
