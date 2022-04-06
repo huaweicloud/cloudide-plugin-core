@@ -275,6 +275,9 @@ class PluginContainerPanel implements IframeLike {
         this.context = context;
         this.options = opts;
 
+        const manifest = JSON.parse(fs.readFileSync(path.join(context.extensionPath, 'package.json'), 'utf8'));
+        const isKSE = manifest.engines && manifest.engines.koostudio;
+
         // compatiable with plugin generated with generator of previous version (version < 0.2.3)
         if (!this.i18n.l10n) {
             initNlsConfig(context.extensionPath);
@@ -291,6 +294,11 @@ class PluginContainerPanel implements IframeLike {
         this.defaultPluginPanel.onDidDispose(() => this.dispose());
         this.defaultPluginPanel.webview.onDidReceiveMessage((message) => {
             this.handleMessage(message);
+            // If koostudio-extension is running, the kernel will forward messages to the specified webview without passing through the background.
+            // For details, see https://codehub-g.huawei.com/cloudide/KooStudio/koostudio/wiki/view/doc/716887
+            if (!isKSE) {
+                this.postMessage(message);
+            }
         });
     }
 
@@ -299,8 +307,6 @@ class PluginContainerPanel implements IframeLike {
         if (!message.from || !message.func) {
             return;
         }
-        // may cause performance problem
-        this.postMessage(message);
 
         if (this.messageHandler) {
             this.messageHandler(message);
