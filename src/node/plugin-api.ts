@@ -315,7 +315,8 @@ class PluginContainerPanel implements IframeLike {
             opts.title = this.i18n.l10n[keyOfTitle] || opts.title;
         }
 
-        const panel = cloudide.window.createCloudWebviewPanel(
+        const createPanel = cloudide.window.createCloudWebviewPanel || cloudide.window.createLightWebviewPanel;
+        const panel = createPanel(
             opts.viewType,
             opts.title,
             {
