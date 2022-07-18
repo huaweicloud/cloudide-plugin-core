@@ -275,6 +275,9 @@ class PluginContainerPanel implements IframeLike {
         this.context = context;
         this.options = opts;
 
+        const { manifest } = Plugin.getInstance();
+        const inCloudIDE = manifest.engines && manifest.engines.theiaPlugin;
+
         // compatiable with plugin generated with generator of previous version (version < 0.2.3)
         if (!this.i18n.l10n) {
             initNlsConfig(context.extensionPath);
@@ -291,16 +294,19 @@ class PluginContainerPanel implements IframeLike {
         this.defaultPluginPanel.onDidDispose(() => this.dispose());
         this.defaultPluginPanel.webview.onDidReceiveMessage((message) => {
             this.handleMessage(message);
+            // In order to be compatible with CloudIDE, it is still necessary to send messages here.
+            if (inCloudIDE) {
+                this.postMessage(message);
+            }
         });
     }
 
+    // Kernel will forward messages to the specified webview without passing through the background.
     private handleMessage(message: any) {
         // Only handle the message from the hosted page
         if (!message.from || !message.func) {
             return;
         }
-        // may cause performance problem
-        this.postMessage(message);
 
         if (this.messageHandler) {
             this.messageHandler(message);
