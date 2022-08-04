@@ -44,7 +44,7 @@ export abstract class AbstractFrontend {
      * Function call to the frontend will wait until init() to be resolved.
      * Do not make remote call in this function.
      */
-    abstract async init(): Promise<void>;
+    abstract init(): Promise<void>;
 
     /**
      * Called after the returned Promise of init() is resolved.

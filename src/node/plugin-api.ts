@@ -4,7 +4,7 @@
  ********************************************************************************/
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import * as cloudide from '@cloudide/plugin';
+import * as cloudide from '@codearts/plugin';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as cheerio from 'cheerio';
@@ -40,7 +40,7 @@ export abstract class AbstractBackend {
      * Function call to the backend will wait until init() to be resolved.
      * Do not make remote call in this function.
      */
-    abstract async init(): Promise<void>;
+    abstract init(): Promise<void>;
 
     /**
      * Called after the returned Promise of init() is resolved.
@@ -249,7 +249,7 @@ export class Plugin {
             backendInstance.stop();
         });
         this.dispose();
-        this.container.context.subscriptions.forEach((disposable) => {
+        this.container.context.subscriptions.forEach((disposable: any) => {
             disposable.dispose();
         });
     }
@@ -292,7 +292,7 @@ class PluginContainerPanel implements IframeLike {
             this.options.extData
         );
         this.defaultPluginPanel.onDidDispose(() => this.dispose());
-        this.defaultPluginPanel.webview.onDidReceiveMessage((message) => {
+        this.defaultPluginPanel.webview.onDidReceiveMessage((message: any) => {
             this.handleMessage(message);
             // In order to be compatible with CloudIDE, it is still necessary to send messages here.
             if (inCloudIDE) {
@@ -320,8 +320,8 @@ class PluginContainerPanel implements IframeLike {
             const keyOfTitle = opts.title.substring(1, opts.title.length - 1);
             opts.title = this.i18n.l10n[keyOfTitle] || opts.title;
         }
-
-        const createPanel = cloudide.window.createCloudWebviewPanel || cloudide.window.createLightWebviewPanel;
+        const codeartsWindowApi = cloudide.window as any;
+        const createPanel = codeartsWindowApi.createCloudWebviewPanel || codeartsWindowApi.createLightWebviewPanel;
         const panel = createPanel(
             opts.viewType,
             opts.title,
@@ -379,7 +379,7 @@ class PluginContainerPanel implements IframeLike {
                 return !panel.dispose && panel.viewType !== dynamicWebviewPanel!.viewType;
             });
         });
-        dynamicWebviewPanel.webview.onDidReceiveMessage((message) => {
+        dynamicWebviewPanel.webview.onDidReceiveMessage((message: any) => {
             this.handleMessage(message);
         });
         this.revealingDynamicWebview.push(dynamicWebviewPanel);
@@ -619,7 +619,7 @@ export class DefaultPluginApiHost extends AbstractBackend {
     private registerEventListener() {
         this.supportedEventTypes.forEach((onEvent, eventType) => {
             this.context.subscriptions.push(
-                onEvent((event) => {
+                onEvent((event: any) => {
                     if (this.subscribedEvents.indexOf(eventType) >= 0) {
                         this.resolveEventPropertiesThenFireEvent(eventType, event);
                     }
