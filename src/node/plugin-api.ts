@@ -275,9 +275,6 @@ class PluginContainerPanel implements IframeLike {
         this.context = context;
         this.options = opts;
 
-        const { manifest } = Plugin.getInstance();
-        const inCloudIDE = manifest.engines && manifest.engines.theiaPlugin;
-
         // compatiable with plugin generated with generator of previous version (version < 0.2.3)
         if (!this.i18n.l10n) {
             initNlsConfig(context.extensionPath);
@@ -294,10 +291,6 @@ class PluginContainerPanel implements IframeLike {
         this.defaultPluginPanel.onDidDispose(() => this.dispose());
         this.defaultPluginPanel.webview.onDidReceiveMessage((message: any) => {
             this.handleMessage(message);
-            // In order to be compatible with CloudIDE, it is still necessary to send messages here.
-            if (inCloudIDE) {
-                this.postMessage(message);
-            }
         });
     }
 
@@ -352,7 +345,7 @@ class PluginContainerPanel implements IframeLike {
     }
 
     public isDynamicWebviewPanelRevealing(panel: cloudide.WebviewPanel): boolean {
-        return !!this.revealingDynamicWebview.find((panel) => panel.viewType === panel.viewType);
+        return !!this.revealingDynamicWebview.find((revealingPanel) => revealingPanel.viewType === panel.viewType);
     }
 
     public createDynamicWebviewPanel(opts: WebviewOptions, override?: boolean) {
