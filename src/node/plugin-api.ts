@@ -637,11 +637,12 @@ export class DefaultPluginApiHost extends AbstractBackend {
             case EventType.WINDOW_ONDIDOPENTERMINAL:
             case EventType.WINDOW_ONDIDCLOSETERMINAL:
             case EventType.WINDOW_ONDIDCHANGEACTIVETERMINAL: {
-                const values = await Promise.all([event.deferredProcessId.promise, event.id.promise, event.processId]);
+                const values = await event.processId;
                 this.fireTheiaEvent(eventType, {
-                    id: values[1],
-                    processId: values[2],
-                    name: event.name
+                    name: event.name,
+                    processId: values,
+                    state: event.state,
+                    exitStatus: event.exitStatus
                 });
                 break;
             }
@@ -783,8 +784,9 @@ export class DefaultPluginApiHost extends AbstractBackend {
         const currentTime = new Date().toISOString().replace('T', ' ').substr(0, 19);
         const consoleFn = Object.getOwnPropertyDescriptor(console, level.toLowerCase());
         const logMessage = `[${level}][${currentTime}][plugin][${this.plugin.manifest?.name}]${message}`;
-        if (consoleFn) {
-            consoleFn.value(logMessage);
+        const logCall = consoleFn?.value || (consoleFn?.get ? consoleFn.get() : undefined);
+        if (logCall) {
+            logCall(logMessage);
         } else {
             console.log(logMessage);
         }
