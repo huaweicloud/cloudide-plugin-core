@@ -264,7 +264,7 @@ const backendClientIdentifier = 'backend';
 class PluginContainerPanel implements IframeLike {
     readonly context: cloudide.ExtensionContext;
     readonly defaultPluginPanel: cloudide.WebviewPanel;
-    private dispossed = false;
+    private disposed = false;
     private options: WebviewOptions;
     private messageHandler?: (message: any) => void;
     private disposedEventHandlers: ((...args: any[]) => void)[] = [];
@@ -405,7 +405,7 @@ class PluginContainerPanel implements IframeLike {
     }
 
     public dispose() {
-        this.dispossed = true;
+        this.disposed = true;
         this.defaultPluginPanel.dispose();
 
         this.revealingDynamicWebview.forEach((webview) => {
@@ -425,7 +425,7 @@ class PluginContainerPanel implements IframeLike {
     }
 
     public isDisposed() {
-        return this.dispossed;
+        return this.disposed;
     }
 
     public renderHtml(viewType: string, webviewUrl: string, extData?: any) {
