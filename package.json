@@ -5,7 +5,7 @@
         "codearts",
         "plugin"
     ],
-    "version": "0.3.3",
+    "version": "0.3.4",
     "license": "SEE LICENSE IN LICENSE",
     "description": "core plugin api of cloudide frontend and backend",
     "repository": {
@@ -19,7 +19,7 @@
         "lib/node"
     ],
     "devDependencies": {
-        "@codearts/plugin": "latest",
+        "@codearts/plugin": "^0.1.3",
         "@types/cheerio": "^0.22.16",
         "@types/ejs": "^3.0.4",
         "@types/mocha": "^8.0.2",
@@ -36,7 +36,7 @@
         "typescript": "^4.4.0"
     },
     "dependencies": {
-        "@cloudide/messaging": "latest",
+        "@cloudide/messaging": "^0.1.0",
         "@cloudide/nls": "latest",
         "cheerio": "^1.0.0-rc.3",
         "ejs": "^3.1.5",

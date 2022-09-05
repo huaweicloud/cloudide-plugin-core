@@ -79,7 +79,6 @@ export class PluginPage {
     private registeredEventHandlers: Map<string, ((eventType: string, event: any) => void)[]> = new Map();
     private extensionPath?: string;
     private frontends: Map<IFrontendConstructor<AbstractFrontend>, AbstractFrontend> = new Map();
-    private activityOccured = false;
     private constructor(pluginPageContext: PluginPageContext, frontends: IFrontendConstructor<AbstractFrontend>[]) {
         this.pluginPageContext = pluginPageContext;
         this.cloudidePluginApi = cloudidePluginApi;
@@ -154,20 +153,6 @@ export class PluginPage {
         this.frontends.forEach((frontendInstance) => {
             frontendInstance.run();
         });
-
-        this.pluginPageContext.window.document.addEventListener('mousemove', () => {
-            this.activityOccured = true;
-        });
-        this.pluginPageContext.window.document.addEventListener('keypress', () => {
-            this.activityOccured = true;
-        });
-
-        setInterval(() => {
-            if (this.activityOccured) {
-                this.fireEventToPlugins('plugin.activity.occur', undefined);
-            }
-            this.activityOccured = false;
-        }, 60000);
     }
 
     /**
@@ -250,11 +235,11 @@ export class PluginPage {
         if (typeof func !== 'string') {
             funcName = func.name as string;
         }
-        if (funcName.startsWith('theia.') || funcName.startsWith('cloudide.')) {
+        if (funcName.startsWith('theia.') || funcName.startsWith('cloudide.') || funcName.startsWith('codearts.')) {
             const funcCallArry = funcName.split('.');
             const argsForTheia = funcCallArry.slice(1);
             argsForTheia.push(...args);
-            return this._call('cloudide', ...argsForTheia);
+            return this._call('codearts', ...argsForTheia);
         }
         return this._call(funcName, ...args);
     }
@@ -327,6 +312,7 @@ export class PluginPage {
      * Create webview on the IDE workbench
      * @param opts options to configure the dynamic webview
      * @param override replace the dynamic webview with the same viewType
+     * @deprecated using createWebviewPanel instead
      */
     public async createDynamicWebview(opts: WebviewOptions, override?: boolean): Promise<void> {
         return this.call('plugin.createDynamicWebview', opts, override);
@@ -335,9 +321,27 @@ export class PluginPage {
     /**
      * Dispose webview with specific viewType
      * @param viewType view type of the dynamic webview
+     * @deprecated using disposeWebviewPanel instead
      */
     public async disposeDynamicWebview(viewType: string): Promise<void> {
         return this.call('plugin.disposeDynamicWebview', viewType);
+    }
+
+    /**
+     * Create webview on the IDE workbench
+     * @param opts options to configure the dynamic webview
+     * @param override replace the dynamic webview with the same viewType
+     */
+    public async createWebviewPanel(opts: WebviewOptions, override?: boolean): Promise<void> {
+        return this.call('plugin.createWebviewPanel', opts, override);
+    }
+
+    /**
+     * Dispose webview with specific viewType
+     * @param viewType view type of the dynamic webview
+     */
+    public async disposeWebviewContainer(viewType: string): Promise<void> {
+        return this.call('plugin.disposeWebviewContainer', viewType);
     }
 
     /**

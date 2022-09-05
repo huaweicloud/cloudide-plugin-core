@@ -1,5 +1,6 @@
+/* eslint-disable no-unused-vars */
 /********************************************************************************
- * Copyright (C) 2020. Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (C) 2022. Huawei Technologies Co., Ltd. All rights reserved.
  * SPDX-License-Identifier: MIT
  ********************************************************************************/
 
@@ -11,7 +12,7 @@ import * as cheerio from 'cheerio';
 import * as ejs from 'ejs';
 import * as pug from 'pug';
 import { v4 as uuid } from 'uuid';
-import { IframeLike, messaging, exposable, Deferred, expose, call, Messaging } from '@cloudide/messaging';
+import { IframeLike, exposable, Deferred, expose, call, Messaging } from '@cloudide/messaging';
 import { WebviewOptions, EventType, LogLevel } from '../common/plugin-common';
 import { CloudIDENlsConfig, nlsConfig, initNlsConfig } from '@cloudide/nls';
 import { format } from '@cloudide/nls/lib/common/common';
@@ -61,6 +62,9 @@ interface IBackendConstructor<T> extends Function {
     new (plugin: Plugin, context: cloudide.ExtensionContext): T;
 }
 
+const backendClientIdentifier = 'backend';
+Messaging.init(backendClientIdentifier);
+
 /**
  * Defines an object to provide CloudIDE backend API.
  * Plugin is a singleton.
@@ -69,13 +73,15 @@ export class Plugin {
     public readonly manifest: any = {};
     private static instance: Plugin;
     readonly pageInitialized: Deferred<boolean> = new Deferred<boolean>();
+    readonly context: cloudide.ExtensionContext;
     private readonly isReady: Deferred<boolean> = new Deferred<boolean>();
-    private _container: PluginContainerPanel;
-    private _options: WebviewOptions;
+    private _container: Map<string, BaseWebviewContainer>;
     private backends: Map<IBackendConstructor<AbstractBackend>, AbstractBackend>;
+    private i18n: CloudIDENlsConfig = nlsConfig;
 
-    private constructor(pluginContainerPanel: PluginContainerPanel, backends: IBackendConstructor<AbstractBackend>[]) {
-        const manifestPath = path.join(pluginContainerPanel.context.extensionPath, 'package.json');
+    private constructor(context: cloudide.ExtensionContext, backends?: IBackendConstructor<AbstractBackend>[]) {
+        this.context = context;
+        const manifestPath = path.join(context.extensionPath, 'package.json');
         try {
             if (fs.existsSync(manifestPath)) {
                 this.manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
@@ -83,10 +89,18 @@ export class Plugin {
         } catch (e) {
             console.error(e);
         }
-        this._container = pluginContainerPanel;
-        this._options = pluginContainerPanel.opts;
+
+        // compatiable with plugin generated with generator of previous version (version < 0.2.3)
+        if (!this.i18n.l10n) {
+            initNlsConfig(context.extensionPath);
+            this.i18n = nlsConfig;
+        }
+
+        this._container = new Map();
         this.backends = new Map<IBackendConstructor<AbstractBackend>, AbstractBackend>();
-        this.initApi(this, pluginContainerPanel.context, backends);
+        if (backends && backends.length > 0) {
+            this.initApi(this, context, backends);
+        }
     }
 
     private async initApi(
@@ -117,26 +131,31 @@ export class Plugin {
     /**
      * Initialize plugin and backend classes.
      * @param context plugin context private to plugin.
-     * @param opts plugin main page options.
-     * @param backends all backends that need to be initialized.
+     * @param opts plugin main page options, create a webview panel when plugin start.
+     * @param backends all backends that need to be initialized, notice that backends can only be initialized once.
      */
     public static create(
         context: cloudide.ExtensionContext,
-        opts: WebviewOptions,
-        backends: IBackendConstructor<AbstractBackend>[]
+        opts?: WebviewOptions,
+        backends?: IBackendConstructor<AbstractBackend>[]
     ): Plugin {
-        if (typeof (cloudide.window as any).registerWebviewAsPluginPage === 'function') {
-            (cloudide.window as any).registerWebviewAsPluginPage(opts.viewType);
-        }
-        if (Plugin.instance && !Plugin.instance.container.isDisposed()) {
-            Plugin.instance.container.defaultPluginPanel.reveal(
-                opts.targetArea,
-                Plugin.instance.container.defaultPluginPanel.viewColumn,
-                opts.preserveFocus
-            );
+        if (Plugin.instance && opts) {
+            const webviewPanel = Plugin.instance.container.get(opts.viewType);
+            if (webviewPanel && webviewPanel instanceof BaseWebviewPanel && !webviewPanel.disposed) {
+                webviewPanel.pluginPanel.reveal(
+                    opts.targetArea,
+                    webviewPanel.pluginPanel.viewColumn,
+                    opts.preserveFocus
+                );
+            } else {
+                Plugin.instance.createWebviewPanel(opts);
+            }
             return Plugin.instance;
         }
-        this.instance = new Plugin(new PluginContainerPanel(context, opts), backends);
+        this.instance = new Plugin(context, backends);
+        if (opts) {
+            Plugin.instance.createWebviewPanel(opts);
+        }
         return Plugin.instance;
     }
 
@@ -148,8 +167,53 @@ export class Plugin {
     }
 
     /**
+     * create webview with messaging protocol support
+     * @param opts create webview by WebviewOptions
+     * @returns webviewpanel with messaging support
+     */
+    public createWebviewPanel(opts: WebviewOptions, override?: boolean): BaseWebviewPanel | undefined {
+        if (override) {
+            const curWebviewPanel = this.container.get(opts.viewType);
+            if (curWebviewPanel && curWebviewPanel instanceof BaseWebviewPanel) {
+                curWebviewPanel.pluginPanel.title = opts.title;
+                curWebviewPanel.pluginPanel.iconPath = opts.iconPath as any;
+                curWebviewPanel.pluginPanel.webview.html = curWebviewPanel.renderHtml(
+                    opts.viewType,
+                    opts.viewUrl,
+                    opts.extData
+                );
+                if (!opts.preserveFocus) {
+                    curWebviewPanel.pluginPanel.reveal();
+                }
+                return curWebviewPanel;
+            }
+        }
+        const newIncomingWebview = new BaseWebviewPanel(this.context, opts);
+        Messaging.bind(newIncomingWebview, backendClientIdentifier);
+        this.container.set(opts.viewType, newIncomingWebview);
+        return newIncomingWebview;
+    }
+
+    public createWebviewViewDialog(opts: WebviewOptions & cloudide.DialogOptions): cloudide.Disposable {
+        const provider = new BaseWebviewDialogProvider(this.context, opts);
+        Messaging.bind(provider, backendClientIdentifier);
+        const dialog = (cloudide.window as any).createWebviewViewDialog(provider, opts);
+        this.container.set(opts.viewType, provider);
+        provider.onDispose(dialog.dispose.bind(dialog));
+        return dialog;
+    }
+
+    public dispatchMessage(sourceViewType: string, message: string): void {
+        this.container.forEach((webviewPanel, viewType) => {
+            if (viewType !== sourceViewType) {
+                webviewPanel.postMessage(message);
+            }
+        });
+    }
+
+    /**
      * Return the backend object initialized by plugin
-     * @param backend Class definition of the backend
+     * @param backendClass Class definition of the backend
      */
     public getBackend(backendClass: IBackendConstructor<AbstractBackend>): AbstractBackend | undefined {
         return this.backends.get(backendClass);
@@ -167,7 +231,7 @@ export class Plugin {
      */
     public async ready(): Promise<boolean> {
         await this.pageInitialized.promise;
-        this.call('cloudide.page.onBackendInitialized', true).then((result) => {
+        this.call('*::cloudide.page.onBackendInitialized', true).then((result) => {
             if (result) {
                 this.isReady.resolve(true);
             } else {
@@ -179,17 +243,15 @@ export class Plugin {
 
     /**
      * Make a function call to frontend.
+     * @param identifier remote function with the format of 'viewType::function-id'
      */
     public async call(identifier: string, ...args: any[]): Promise<any> {
         await this.pageInitialized.promise;
         const messagingInstance = Messaging.getInstance();
         if (messagingInstance) {
-            return messagingInstance.call(
-                identifier.indexOf('::') >= 0 ? identifier : `${this.options.viewType}::${identifier}`,
-                ...args
-            );
+            return messagingInstance.call(identifier, ...args);
         }
-        return Promise.resolve(false);
+        return Promise.resolve();
     }
 
     /**
@@ -212,7 +274,7 @@ export class Plugin {
     }
 
     public localize(key: string, ...args: any[]): string {
-        const message = this.container.getI18n()?.l10n[key];
+        const message = this.i18n.l10n[key];
         if (!message) {
             return '';
         }
@@ -220,7 +282,8 @@ export class Plugin {
     }
 
     revive(panel: cloudide.WebviewPanel, context: cloudide.ExtensionContext, opts: WebviewOptions, state: any): void {
-        if (this.container && this.container.isDisposed()) {
+        const webviewContainer = this._container.get(opts.viewType);
+        if (webviewContainer && webviewContainer.disposed) {
             if (typeof panel.showOptions === 'object') {
                 panel.reveal(panel.showOptions.area, panel.viewColumn, opts.preserveFocus);
             } else {
@@ -232,16 +295,21 @@ export class Plugin {
         }
     }
 
-    dispose(): void {
-        this.container.dispose();
+    dispose(viewType?: string): void {
+        if (viewType) {
+            const webviewContainer = this._container.get(viewType);
+            webviewContainer?.dispose();
+            this._container.delete(viewType);
+            return;
+        }
+        this._container.forEach((webviewContainer: BaseWebviewContainer) => {
+            webviewContainer.dispose();
+            this._container.clear();
+        });
     }
 
-    get container(): PluginContainerPanel {
+    get container(): Map<string, BaseWebviewContainer> {
         return this._container;
-    }
-
-    get options(): WebviewOptions {
-        return this._options;
     }
 
     public stop(): void {
@@ -249,139 +317,43 @@ export class Plugin {
             backendInstance.stop();
         });
         this.dispose();
-        this.container.context.subscriptions.forEach((disposable: any) => {
+        this.context.subscriptions.forEach((disposable: any) => {
             disposable.dispose();
         });
     }
 }
 
-const backendClientIdentifier = 'backend';
-
-/**
- * Plugin Container Panel to host html loaded from plugin
- */
-@messaging(backendClientIdentifier)
-class PluginContainerPanel implements IframeLike {
+abstract class BaseWebviewContainer implements IframeLike {
     readonly context: cloudide.ExtensionContext;
-    readonly defaultPluginPanel: cloudide.WebviewPanel;
-    private disposed = false;
-    private options: WebviewOptions;
-    private messageHandler?: (message: any) => void;
-    private disposedEventHandlers: ((...args: any[]) => void)[] = [];
-    private revealingDynamicWebview: cloudide.WebviewPanel[] = [];
-    private i18n: CloudIDENlsConfig = nlsConfig;
+    protected i18n: CloudIDENlsConfig = nlsConfig;
+    protected _options: WebviewOptions;
+    protected _disposed: boolean;
+    protected webview?: cloudide.Webview;
+    protected messageHandler?: (message: any) => void;
+    protected disposedEventHandlers: ((...args: any[]) => void)[] = [];
 
     constructor(context: cloudide.ExtensionContext, opts: WebviewOptions) {
+        this._disposed = false;
         this.context = context;
-        this.options = opts;
-
-        // compatiable with plugin generated with generator of previous version (version < 0.2.3)
-        if (!this.i18n.l10n) {
-            initNlsConfig(context.extensionPath);
-            this.i18n = nlsConfig;
-        }
-
-        // create default plugin page webview panel
-        this.defaultPluginPanel = this.createWebviewPanel(this.options);
-        this.defaultPluginPanel.webview.html = this.renderHtml(
-            this.options.viewType,
-            this.options.viewUrl,
-            this.options.extData
-        );
-        this.defaultPluginPanel.onDidDispose(() => this.dispose());
-        this.defaultPluginPanel.webview.onDidReceiveMessage((message: any) => {
-            this.handleMessage(message);
-        });
+        this._options = opts;
     }
 
-    // Kernel will forward messages to the specified webview without passing through the background.
-    private handleMessage(message: any) {
+    get disposed() {
+        return this._disposed;
+    }
+
+    get options(): WebviewOptions {
+        return this._options;
+    }
+
+    handleMessage(message: any) {
         // Only handle the message from the hosted page
         if (!message.from || !message.func) {
             return;
         }
-
+        Plugin.getInstance().dispatchMessage(this._options.viewType, message);
         if (this.messageHandler) {
             this.messageHandler(message);
-        }
-    }
-
-    public createWebviewPanel(opts: WebviewOptions): cloudide.WebviewPanel {
-        this.options = opts;
-
-        if (opts.title.startsWith('%') && opts.title.endsWith('%')) {
-            const keyOfTitle = opts.title.substring(1, opts.title.length - 1);
-            opts.title = this.i18n.l10n[keyOfTitle] || opts.title;
-        }
-        const codeartsWindowApi = cloudide.window as any;
-        const createPanel = codeartsWindowApi.createCloudWebviewPanel || codeartsWindowApi.createLightWebviewPanel;
-        const panel = createPanel(
-            opts.viewType,
-            opts.title,
-            {
-                area: opts.targetArea,
-                preserveFocus: opts.preserveFocus ? opts.preserveFocus : false
-            },
-            {
-                enableScripts: true,
-                localResourceRoots: [cloudide.Uri.file(path.join(this.context.extensionPath, 'resources'))],
-                retainContextWhenHidden: true
-            }
-        );
-        const lightIconUri = cloudide.Uri.file(
-            path.join(
-                this.context.extensionPath,
-                typeof opts.iconPath === 'object' ? opts.iconPath.light : opts.iconPath
-            )
-        );
-        const darkIconUri = cloudide.Uri.file(
-            path.join(
-                this.context.extensionPath,
-                typeof opts.iconPath === 'object' ? opts.iconPath.dark : opts.iconPath
-            )
-        );
-        panel.iconPath = { light: lightIconUri, dark: darkIconUri };
-        return panel;
-    }
-
-    public isDynamicWebviewPanelRevealing(panel: cloudide.WebviewPanel): boolean {
-        return !!this.revealingDynamicWebview.find((revealingPanel) => revealingPanel.viewType === panel.viewType);
-    }
-
-    public createDynamicWebviewPanel(opts: WebviewOptions, override?: boolean) {
-        // return webview if already revealed
-        let dynamicWebviewPanel = this.revealingDynamicWebview.find((panel) => panel.viewType === opts.viewType);
-        if (dynamicWebviewPanel) {
-            if (override) {
-                dynamicWebviewPanel.title = opts.title;
-                dynamicWebviewPanel.iconPath = opts.iconPath as any;
-                dynamicWebviewPanel.webview.html = this.renderHtml(opts.viewType, opts.viewUrl, opts.extData);
-            }
-            if (!opts.preserveFocus) {
-                dynamicWebviewPanel.reveal();
-            }
-
-            return dynamicWebviewPanel;
-        }
-
-        dynamicWebviewPanel = this.createWebviewPanel(opts);
-        dynamicWebviewPanel.webview.html = this.renderHtml(opts.viewType, opts.viewUrl, opts.extData);
-        dynamicWebviewPanel.onDidDispose(() => {
-            this.revealingDynamicWebview = this.revealingDynamicWebview.filter((panel) => {
-                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                return !panel.dispose && panel.viewType !== dynamicWebviewPanel!.viewType;
-            });
-        });
-        dynamicWebviewPanel.webview.onDidReceiveMessage((message: any) => {
-            this.handleMessage(message);
-        });
-        this.revealingDynamicWebview.push(dynamicWebviewPanel);
-    }
-
-    public disposeDynamicWebviewPanel(viewType: string) {
-        const dynamicWebviewPanel = this.revealingDynamicWebview.find((panel) => panel.viewType === viewType);
-        if (dynamicWebviewPanel) {
-            dynamicWebviewPanel.dispose();
         }
     }
 
@@ -389,29 +361,16 @@ class PluginContainerPanel implements IframeLike {
         this.messageHandler = messageHandler;
     }
 
-    postMessage(message: any) {
-        this.defaultPluginPanel.webview.postMessage(message);
-        this.revealingDynamicWebview.forEach((panel) => {
-            panel.webview.postMessage(message);
-        });
+    postMessage(message: any): void {
+        this.webview?.postMessage(message);
     }
 
-    get opts() {
-        return this.options;
-    }
-
-    public getI18n() {
-        return this.i18n;
+    onDispose(disposedEventHandler: (...args: any[]) => void) {
+        this.disposedEventHandlers.push(disposedEventHandler);
     }
 
     public dispose() {
-        this.disposed = true;
-        this.defaultPluginPanel.dispose();
-
-        this.revealingDynamicWebview.forEach((webview) => {
-            webview.dispose();
-        });
-
+        this._disposed = true;
         // fire event
         if (this.disposedEventHandlers) {
             this.disposedEventHandlers.forEach(async (eventHandler) => {
@@ -420,16 +379,8 @@ class PluginContainerPanel implements IframeLike {
         }
     }
 
-    onDispose(disposedEventHandler: (...args: any[]) => void) {
-        this.disposedEventHandlers.push(disposedEventHandler);
-    }
-
-    public isDisposed() {
-        return this.disposed;
-    }
-
     public renderHtml(viewType: string, webviewUrl: string, extData?: any) {
-        if (!this.defaultPluginPanel || !this.options || !this.context.extensionPath) {
+        if (!this._options || !this.context.extensionPath) {
             return '';
         }
         const extensionPath = this.context.extensionPath;
@@ -443,9 +394,9 @@ class PluginContainerPanel implements IframeLike {
             let htmlData = fs.readFileSync(localEntryPath, 'utf8');
 
             // render template to html
-            if (this.options.templateEngine === 'ejs') {
+            if (this._options.templateEngine === 'ejs') {
                 htmlData = ejs.render(htmlData, { l10n: this.i18n?.l10n, extData });
-            } else if (this.options.templateEngine === 'pug') {
+            } else if (this._options.templateEngine === 'pug') {
                 htmlData = pug.render(htmlData, { l10n: this.i18n?.l10n, extData });
             }
             const $ = cheerio.load(htmlData);
@@ -508,14 +459,11 @@ class PluginContainerPanel implements IframeLike {
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
-
                 <!--
                 Use a content security policy to only allow loading images from https or from our extension directory,
                 scripts that have a specific nonce and only allow unsafe-inline for theme styles.
-
                 <meta http-equiv="Content-Security-Policy" content="default-src 'self'  http://schemastore.azurewebsites.net ${webviewUrl}; style-src 'unsafe-inline';
                 img-src theia-resource: https: http: data:; script-src 'nonce-${nonce}' 'self';"> -->
-
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Huawei cloudide plugin</title>
                 <style>
@@ -538,6 +486,106 @@ class PluginContainerPanel implements IframeLike {
                 <iframe src="${iframeHtmlUri}" style="width: 100%; height: 100%;"></iframe>
             </body>
             </html>`;
+    }
+}
+
+class BaseWebviewDialogProvider extends BaseWebviewContainer {
+    constructor(context: cloudide.ExtensionContext, opts: WebviewOptions) {
+        super(context, opts);
+    }
+
+    resolveWebviewView(
+        webviewView: cloudide.WebviewView,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        context: cloudide.WebviewViewResolveContext<unknown>,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        token: cloudide.CancellationToken
+    ): void | Thenable<void> {
+        this.webview = webviewView.webview;
+        webviewView.webview.options = {
+            enableScripts: true,
+            localResourceRoots: [cloudide.Uri.file(path.join(this.context.extensionPath, 'resources'))]
+        };
+        webviewView.webview.html = this.renderHtml(
+            this._options.viewType,
+            this._options.viewUrl,
+            this._options.extData
+        );
+        webviewView.webview.onDidReceiveMessage((message: any) => {
+            this.handleMessage(message);
+        });
+        webviewView.onDidDispose(() => this.dispose());
+    }
+}
+
+class BaseWebviewPanel extends BaseWebviewContainer {
+    readonly pluginPanel: cloudide.WebviewPanel;
+    protected messageHandler?: (message: any) => void;
+    protected disposedEventHandlers: ((...args: any[]) => void)[] = [];
+
+    constructor(context: cloudide.ExtensionContext, opts: WebviewOptions) {
+        super(context, opts);
+        // compatiable with plugin generated with generator of previous version (version < 0.2.3)
+        if (!this.i18n.l10n) {
+            initNlsConfig(context.extensionPath);
+            this.i18n = nlsConfig;
+        }
+
+        // create default plugin page webview panel
+        this.pluginPanel = this.createWebviewPanel(this._options);
+        this.webview = this.pluginPanel.webview;
+        this.pluginPanel.webview.html = this.renderHtml(
+            this._options.viewType,
+            this._options.viewUrl,
+            this._options.extData
+        );
+        this.pluginPanel.onDidDispose(() => this.dispose());
+        this.pluginPanel.webview.onDidReceiveMessage((message: any) => {
+            this.handleMessage(message);
+        });
+    }
+
+    public createWebviewPanel(opts: WebviewOptions): cloudide.WebviewPanel {
+        this._options = opts;
+
+        if (opts.title.startsWith('%') && opts.title.endsWith('%')) {
+            const keyOfTitle = opts.title.substring(1, opts.title.length - 1);
+            opts.title = this.i18n.l10n[keyOfTitle] || opts.title;
+        }
+        const codeartsWindowApi = cloudide.window as any;
+        const createPanel = codeartsWindowApi.createCloudWebviewPanel || codeartsWindowApi.createLightWebviewPanel;
+        const panel = createPanel(
+            opts.viewType,
+            opts.title,
+            {
+                area: opts.targetArea,
+                preserveFocus: opts.preserveFocus ? opts.preserveFocus : false
+            },
+            {
+                enableScripts: true,
+                localResourceRoots: [cloudide.Uri.file(path.join(this.context.extensionPath, 'resources'))],
+                retainContextWhenHidden: true
+            }
+        );
+        const lightIconUri = cloudide.Uri.file(
+            path.join(
+                this.context.extensionPath,
+                typeof opts.iconPath === 'object' ? opts.iconPath.light : opts.iconPath
+            )
+        );
+        const darkIconUri = cloudide.Uri.file(
+            path.join(
+                this.context.extensionPath,
+                typeof opts.iconPath === 'object' ? opts.iconPath.dark : opts.iconPath
+            )
+        );
+        panel.iconPath = { light: lightIconUri, dark: darkIconUri };
+        return panel;
+    }
+
+    public dispose() {
+        super.dispose();
+        this.pluginPanel.dispose();
     }
 }
 
@@ -680,13 +728,37 @@ export class DefaultPluginApiHost extends AbstractBackend {
     }
 
     @expose('plugin.createDynamicWebview')
-    public createDynamicWebview(opts: WebviewOptions, override?: boolean): cloudide.WebviewPanel | undefined {
-        return Plugin.getInstance().container.createDynamicWebviewPanel(opts, override);
+    public createDynamicWebview(opts: WebviewOptions, override?: boolean): boolean {
+        if (!Plugin.getInstance().createWebviewPanel(opts, override)) {
+            return false;
+        }
+        return true;
     }
 
     @expose('plugin.disposeDynamicWebview')
     public disposeDynamicWebview(viewType: string): void {
-        Plugin.getInstance().container.disposeDynamicWebviewPanel(viewType);
+        Plugin.getInstance().dispose(viewType);
+    }
+
+    @expose('plugin.createWebviewPanel')
+    public createWebviewPanel(opts: WebviewOptions, override?: boolean): boolean {
+        if (!Plugin.getInstance().createWebviewPanel(opts, override)) {
+            return false;
+        }
+        return true;
+    }
+
+    @expose('plugin.disposeWebviewContainer')
+    public disposeWebviewContainer(viewType: string): void {
+        Plugin.getInstance().dispose(viewType);
+    }
+
+    @expose('plugin.createWebviewViewDialog')
+    public createWebviewViewDialog(opts: WebviewOptions): boolean {
+        if (!Plugin.getInstance().createWebviewViewDialog(opts)) {
+            return false;
+        }
+        return true;
     }
 
     @expose('plugin.api')
