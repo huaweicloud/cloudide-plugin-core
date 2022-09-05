@@ -5,7 +5,7 @@
         "codearts",
         "plugin"
     ],
-    "version": "0.3.4",
+    "version": "0.3.5",
     "license": "SEE LICENSE IN LICENSE",
     "description": "core plugin api of cloudide frontend and backend",
     "repository": {

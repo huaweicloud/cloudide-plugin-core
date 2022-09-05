@@ -7,6 +7,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 declare let acquireVsCodeApi: any;
 declare let acquireCloudidePluginApi: any;
+import { DialogOptions } from '@codearts/plugin';
 import { Deferred, IframeLike, exposable, expose, messaging, Messaging } from '@cloudide/messaging';
 import { WebviewOptions, LogLevel } from '../common/plugin-common';
 import { format } from '@cloudide/nls/lib/common/common';
@@ -321,7 +322,7 @@ export class PluginPage {
     /**
      * Dispose webview with specific viewType
      * @param viewType view type of the dynamic webview
-     * @deprecated using disposeWebviewPanel instead
+     * @deprecated using disposeWebviewContainer instead
      */
     public async disposeDynamicWebview(viewType: string): Promise<void> {
         return this.call('plugin.disposeDynamicWebview', viewType);
@@ -329,11 +330,20 @@ export class PluginPage {
 
     /**
      * Create webview on the IDE workbench
-     * @param opts options to configure the dynamic webview
-     * @param override replace the dynamic webview with the same viewType
+     * @param opts options to configure the webview
+     * @param override replace the webview with the same viewType
      */
     public async createWebviewPanel(opts: WebviewOptions, override?: boolean): Promise<void> {
         return this.call('plugin.createWebviewPanel', opts, override);
+    }
+
+    /**
+     * Create webview view dialog
+     * @param opts options to configure the dynamic webview
+     * @param override replace the dynamic webview with the same viewType
+     */
+    public async createWebviewViewDialog(opts: WebviewOptions & DialogOptions): Promise<void> {
+        return this.call('plugin.createWebviewViewDialog', opts);
     }
 
     /**

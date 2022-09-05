@@ -194,6 +194,11 @@ export class Plugin {
         return newIncomingWebview;
     }
 
+    /**
+     * Create dialog that contains a webview with messaging protocol support
+     * @param opts dialog options
+     * @returns cloudide.Disposable
+     */
     public createWebviewViewDialog(opts: WebviewOptions & cloudide.DialogOptions): cloudide.Disposable {
         const provider = new BaseWebviewDialogProvider(this.context, opts);
         Messaging.bind(provider, backendClientIdentifier);
