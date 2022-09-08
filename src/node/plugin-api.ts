@@ -167,7 +167,7 @@ export class Plugin {
     }
 
     /**
-     * create webview with messaging protocol support
+     * create a webview panel with messaging protocol support
      * @param opts create webview by WebviewOptions
      * @returns webviewpanel with messaging support
      */
@@ -209,9 +209,9 @@ export class Plugin {
     }
 
     public dispatchMessage(sourceViewType: string, message: string): void {
-        this.container.forEach((webviewPanel, viewType) => {
+        this.container.forEach((webviewContainer, viewType) => {
             if (viewType !== sourceViewType) {
-                webviewPanel.postMessage(message);
+                webviewContainer.postMessage(message);
             }
         });
     }
@@ -598,7 +598,7 @@ class BaseWebviewPanel extends BaseWebviewContainer {
  * default plugin backend api exposed to frontend page
  */
 @exposable
-export class DefaultPluginApiHost extends AbstractBackend {
+class DefaultPluginApiHost extends AbstractBackend {
     readonly subscribedEvents: string[] = [];
     readonly supportedEventTypes: Map<string, cloudide.Event<any>> = new Map()
         // events from workspace module

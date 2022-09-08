@@ -24,5 +24,6 @@
     ],
     "plugins": [
         "prettier"
-    ]
+    ],
+    "ignorePatterns": ["lib/"]
 }
