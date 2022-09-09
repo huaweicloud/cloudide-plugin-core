@@ -46,12 +46,12 @@ export abstract class AbstractBackend {
     /**
      * Called after the returned Promise of init() is resolved.
      * In this function you can call function exposed by fronted.
-     * Implementation your front logic in this function.
+     * Implementation your business logic in this function.
      */
     abstract run(): void;
 
     /**
-     * Called before plugin stops.
+     * Called when plugin stops.
      */
     abstract stop(): void;
 }
