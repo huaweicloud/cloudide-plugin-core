@@ -25,7 +25,7 @@ export interface WebviewOptions {
      * The default view area of the plugin view.
      * Supports left ('left'), right('right'), main editing area ('main'), bottom ('bottom').
      */
-    targetArea: string;
+    targetArea?: string;
 
     /**
      * Plugin icon displayed on the panel.

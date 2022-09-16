@@ -563,7 +563,7 @@ class BaseWebviewPanel extends BaseWebviewContainer {
             opts.viewType,
             opts.title,
             {
-                area: opts.targetArea,
+                area: opts.targetArea || 'main',
                 preserveFocus: opts.preserveFocus ? opts.preserveFocus : false
             },
             {
