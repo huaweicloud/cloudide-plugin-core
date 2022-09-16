@@ -31,7 +31,7 @@ export interface WebviewOptions {
      * Plugin icon displayed on the panel.
      * The icon in svg format can automatically adapt to the theme color.
      */
-    iconPath: { light: string; dark: string } | string;
+    iconPath?: { light: string; dark: string } | string;
 
     /**
      * The path of the page to be displayed.

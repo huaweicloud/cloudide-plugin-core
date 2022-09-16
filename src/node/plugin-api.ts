@@ -572,19 +572,6 @@ class BaseWebviewPanel extends BaseWebviewContainer {
                 retainContextWhenHidden: true
             }
         );
-        const lightIconUri = cloudide.Uri.file(
-            path.join(
-                this.context.extensionPath,
-                typeof opts.iconPath === 'object' ? opts.iconPath.light : opts.iconPath
-            )
-        );
-        const darkIconUri = cloudide.Uri.file(
-            path.join(
-                this.context.extensionPath,
-                typeof opts.iconPath === 'object' ? opts.iconPath.dark : opts.iconPath
-            )
-        );
-        panel.iconPath = { light: lightIconUri, dark: darkIconUri };
         return panel;
     }
 
