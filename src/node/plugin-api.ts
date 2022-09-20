@@ -72,9 +72,7 @@ Messaging.init(backendClientIdentifier);
 export class Plugin {
     public readonly manifest: any = {};
     private static instance: Plugin;
-    readonly pageInitialized: Deferred<boolean> = new Deferred<boolean>();
     readonly context: cloudide.ExtensionContext;
-    private readonly isReady: Deferred<boolean> = new Deferred<boolean>();
     private _container: Map<string, BaseWebviewContainer>;
     private backends: Map<IBackendConstructor<AbstractBackend>, AbstractBackend>;
     private i18n: CloudIDENlsConfig = nlsConfig;
@@ -122,7 +120,7 @@ export class Plugin {
             initPromises.push(backendInstance.value.init());
         }
         await Promise.all(initPromises);
-        await plugin.ready();
+        //await plugin.ready();
         this.backends.forEach((backendInstance) => {
             backendInstance.run();
         });
@@ -208,9 +206,10 @@ export class Plugin {
         return dialog;
     }
 
-    public dispatchMessage(sourceViewType: string, message: string): void {
-        this.container.forEach((webviewContainer, viewType) => {
+    public dispatchMessage(sourceViewType: string, message: any): void {
+        this.container.forEach(async (webviewContainer, viewType) => {
             if (viewType !== sourceViewType) {
+                await webviewContainer.pageInitialized.promise;
                 webviewContainer.postMessage(message);
             }
         });
@@ -232,26 +231,18 @@ export class Plugin {
     }
 
     /**
-     * Notify frontend that backend is ready and exposed function can be called.
-     */
-    public async ready(): Promise<boolean> {
-        await this.pageInitialized.promise;
-        this.call('*::cloudide.page.onBackendInitialized', true).then((result) => {
-            if (result) {
-                this.isReady.resolve(true);
-            } else {
-                this.isReady.resolve(false);
-            }
-        });
-        return this.isReady.promise;
-    }
-
-    /**
      * Make a function call to frontend.
      * @param identifier remote function with the format of 'viewType::function-id'
      */
     public async call(identifier: string, ...args: any[]): Promise<any> {
-        await this.pageInitialized.promise;
+        const viewType = identifier.indexOf('::') >= 0 ? identifier.substring(0, identifier.indexOf('::')) : '';
+        const viewContainer =
+            this._container.size === 1 ? this._container.values().next().value : this._container.get(viewType);
+        if (!viewContainer) {
+            this.log(LogLevel.ERROR, `target view not exist: ${viewType}`);
+            return Promise.reject(`target view not exist: ${viewType}`);
+        }
+        await viewContainer.pageInitialized.promise;
         const messagingInstance = Messaging.getInstance();
         if (messagingInstance) {
             return messagingInstance.call(identifier, ...args);
@@ -330,6 +321,7 @@ export class Plugin {
 
 abstract class BaseWebviewContainer implements IframeLike {
     readonly context: cloudide.ExtensionContext;
+    readonly pageInitialized: Deferred<boolean> = new Deferred<boolean>();
     protected i18n: CloudIDENlsConfig = nlsConfig;
     protected _options: WebviewOptions;
     protected _disposed: boolean;
@@ -698,23 +690,13 @@ class DefaultPluginApiHost extends AbstractBackend {
     }
 
     @expose('plugin.onPageInit')
-    public onPageInit(success?: boolean): boolean {
-        if (!Plugin.getInstance().pageInitialized.isPending) {
-            Plugin.getInstance()
-                .call('*::cloudide.page.onBackendInitialized', true)
-                .then((result) => {
-                    if (result) {
-                        console.log('backend already initialized, renotify plugin frontend success.');
-                    }
-                });
+    public onPageInit(viewType: string, success?: boolean): boolean {
+        const viewContainer = Plugin.getInstance().container.get(viewType);
+        if (!viewContainer) {
+            return false;
         }
 
-        const huaweiCommon = cloudide.extensions.getExtension('huawei-builtin.huawei-cloudide-common');
-        this.huaweiCommonApi = huaweiCommon ? huaweiCommon.exports : this.huaweiCommonApi;
-
-        Plugin.getInstance().pageInitialized.resolve(!!success);
-
-        this.subscribeEvent(beforeUninstallEventType);
+        viewContainer.pageInitialized.resolve(!!success);
 
         return !!success;
     }

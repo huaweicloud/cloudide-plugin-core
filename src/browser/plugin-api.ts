@@ -72,7 +72,6 @@ const backendClientIdentifier = 'backend';
  */
 export class PluginPage {
     private static instance: PluginPage;
-    public readonly backendInitialized: Deferred<boolean> = new Deferred<boolean>();
     public readonly cloudidePluginApi: CloudidePluginApi;
     private readonly domInitialized: Deferred<boolean> = new Deferred<boolean>();
     private readonly isReady: Deferred<boolean> = new Deferred<boolean>();
@@ -116,7 +115,7 @@ export class PluginPage {
     }
 
     private async syncInitializedStatus() {
-        this._call('plugin.onPageInit', true)
+        this._call('plugin.onPageInit', cloudidePluginApi.getViewType(), true)
             .then((value) => {
                 this.isReady.resolve(value);
             })
@@ -231,7 +230,6 @@ export class PluginPage {
      * @returns Promise<any>
      */
     public async call(func: any, ...args: any[]): Promise<any> {
-        await this.backendInitialized.promise;
         let funcName = func as string;
         if (typeof func !== 'string') {
             funcName = func.name as string;
@@ -425,12 +423,6 @@ class DefaultPageApi extends AbstractFrontend {
 
     stop(): void {
         // do nothing
-    }
-
-    @expose('cloudide.page.onBackendInitialized')
-    public onBackendInitialized(result: boolean) {
-        this.plugin.backendInitialized.resolve(result);
-        return result;
     }
 
     @expose('plugin.page.onEvent')
