@@ -260,13 +260,13 @@ export class Plugin {
     }
 
     /**
-     * Emit event to other plugins
+     * Emit event to plugin page
      * @param eventType event type.
      * @param event event object.
      */
     // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-    public fireEventToPlugins(eventType: string, event: any): void {
-        (this.backends.get(DefaultPluginApiHost) as DefaultPluginApiHost).fireEventToPlugins(eventType, event);
+    public fireEvent(eventType: string, event: any): void {
+        (this.backends.get(DefaultPluginApiHost) as DefaultPluginApiHost).fireTheiaEvent(eventType, event);
     }
 
     public localize(key: string, ...args: any[]): string {
@@ -789,12 +789,6 @@ class DefaultPluginApiHost extends AbstractBackend {
     public subscribeEvent(eventType: string): void {
         if (this.supportedEventTypes.get(eventType) && this.subscribedEvents.indexOf(eventType) < 0) {
             this.subscribedEvents.push(eventType);
-        } else {
-            if (this.huaweiCommonApi) {
-                this.huaweiCommonApi.onEvent(eventType, (eventType: string, event: any) => {
-                    this.fireTheiaEvent(eventType, event);
-                });
-            }
         }
     }
 

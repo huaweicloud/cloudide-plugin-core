@@ -215,15 +215,6 @@ export class PluginPage {
     }
 
     /**
-     * Broadcast event to plugins
-     * @param eventType unique type of event
-     * @param event event object
-     */
-    public async fireEventToPlugins(eventType: string, event: any): Promise<void> {
-        this.call('plugin.fireEvent', eventType, event);
-    }
-
-    /**
      * Call remote function exposed on backend
      * @param func function name of remote function
      * @param args arguments passed to remote function
