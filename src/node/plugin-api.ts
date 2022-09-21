@@ -556,7 +556,15 @@ class BaseWebviewPanel extends BaseWebviewContainer {
             opts.title,
             {
                 area: opts.targetArea || 'main',
-                preserveFocus: opts.preserveFocus ? opts.preserveFocus : false
+                preserveFocus: opts.preserveFocus ? opts.preserveFocus : false,
+                iconPath: opts.iconPath
+                    ? cloudide.Uri.file(
+                          path.join(
+                              this.context.extensionPath,
+                              typeof opts.iconPath === 'object' ? opts.iconPath.light : opts.iconPath
+                          )
+                      )
+                    : undefined
             },
             {
                 enableScripts: true,
