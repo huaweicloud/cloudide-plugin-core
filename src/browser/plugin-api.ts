@@ -83,6 +83,8 @@ export class PluginPage {
         this.pluginPageContext = pluginPageContext;
         this.cloudidePluginApi = cloudidePluginApi;
         this.extensionPath = this.cloudidePluginApi.getExtensionPath();
+        // remove duplicates from the frontend list
+        frontends = [...new Set(frontends)];
         const doc = this.pluginPageContext.window.document;
         doc.addEventListener('keydown', (event: KeyboardEvent) => {
             switch (event.keyCode) {
@@ -215,9 +217,9 @@ export class PluginPage {
     }
 
     /**
-     * Call remote function exposed on backend
-     * @param func function name of remote function
-     * @param args arguments passed to remote function
+     * Make a function call to frontend.
+     * @param identifier remote function with the format of 'viewType::function-id'
+     * @param args parameters passed to remote function
      * @returns Promise<any>
      */
     public async call(func: any, ...args: any[]): Promise<any> {

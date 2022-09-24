@@ -80,6 +80,8 @@ export class Plugin {
     private constructor(context: cloudide.ExtensionContext, backends?: IBackendConstructor<AbstractBackend>[]) {
         this.context = context;
         const manifestPath = path.join(context.extensionPath, 'package.json');
+        // remove duplicates from the backend list
+        backends = [...new Set(backends)];
         try {
             if (fs.existsSync(manifestPath)) {
                 this.manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
@@ -233,6 +235,8 @@ export class Plugin {
     /**
      * Make a function call to frontend.
      * @param identifier remote function with the format of 'viewType::function-id'
+     * @param args parameters pass to remote function
+     * @returns Promise<any>
      */
     public async call(identifier: string, ...args: any[]): Promise<any> {
         const viewType = identifier.indexOf('::') >= 0 ? identifier.substring(0, identifier.indexOf('::')) : '';
