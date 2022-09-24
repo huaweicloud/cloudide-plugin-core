@@ -87,9 +87,9 @@ export class PluginPage {
         frontends = [...new Set(frontends)];
         const doc = this.pluginPageContext.window.document;
         doc.addEventListener('keydown', (event: KeyboardEvent) => {
-            switch (event.keyCode) {
-                case 112:
-                case 116:
+            switch (event.key) {
+                case 'F1':
+                case 'F5':
                     event.preventDefault();
                     break;
             }
