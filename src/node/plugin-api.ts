@@ -298,7 +298,9 @@ export class Plugin {
     dispose(viewType?: string): void {
         if (viewType) {
             const webviewContainer = this._container.get(viewType);
-            webviewContainer?.dispose();
+            if (webviewContainer && !webviewContainer.disposed) {
+                webviewContainer.dispose();
+            }
             this._container.delete(viewType);
             return;
         }
@@ -378,6 +380,7 @@ abstract class BaseWebviewContainer implements IframeLike {
                 eventHandler();
             });
         }
+        Plugin.getInstance().dispose(this.options.viewType);
     }
 
     public renderHtml(viewType: string, webviewUrl: string, extData?: any) {
