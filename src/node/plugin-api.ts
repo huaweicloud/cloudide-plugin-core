@@ -76,6 +76,7 @@ export class Plugin {
     private _container: Map<string, BaseWebviewContainer>;
     private backends: Map<IBackendConstructor<AbstractBackend>, AbstractBackend>;
     private i18n: CloudIDENlsConfig = nlsConfig;
+    private _outputChannel?: cloudide.OutputChannel;
 
     private constructor(context: cloudide.ExtensionContext, backends?: IBackendConstructor<AbstractBackend>[]) {
         this.context = context;
@@ -176,7 +177,14 @@ export class Plugin {
             const curWebviewPanel = this.container.get(opts.viewType);
             if (curWebviewPanel && curWebviewPanel instanceof BaseWebviewPanel) {
                 curWebviewPanel.pluginPanel.title = opts.title;
-                curWebviewPanel.pluginPanel.iconPath = opts.iconPath as any;
+                curWebviewPanel.pluginPanel.iconPath = opts.iconPath
+                    ? cloudide.Uri.file(
+                          path.join(
+                              this.context.extensionPath,
+                              typeof opts.iconPath === 'object' ? opts.iconPath.light : opts.iconPath
+                          )
+                      )
+                    : undefined;
                 curWebviewPanel.pluginPanel.webview.html = curWebviewPanel.renderHtml(
                     opts.viewType,
                     opts.viewUrl,
@@ -260,7 +268,14 @@ export class Plugin {
      * @param message log message.
      */
     public log(level: LogLevel, message: string): void {
-        (this.backends.get(DefaultPluginApiHost) as DefaultPluginApiHost).log(level, message);
+        // create output channel when log is called
+        if (!this._outputChannel) {
+            this._outputChannel = cloudide.window.createOutputChannel(this.context.extension.id);
+        }
+
+        const currentTime = new Date().toISOString().replace('T', ' ').substr(0, 19);
+        const logMessage = `[${level}][${currentTime}]${message}`;
+        this._outputChannel.appendLine(logMessage);
     }
 
     /**
@@ -836,15 +851,7 @@ class DefaultPluginApiHost extends AbstractBackend {
 
     @expose('plugin.log')
     public log(level: LogLevel, message: string): void {
-        const currentTime = new Date().toISOString().replace('T', ' ').substr(0, 19);
-        const consoleFn = Object.getOwnPropertyDescriptor(console, level.toLowerCase());
-        const logMessage = `[${level}][${currentTime}][plugin][${this.plugin.manifest?.name}]${message}`;
-        const logCall = consoleFn?.value || (consoleFn?.get ? consoleFn.get() : undefined);
-        if (logCall) {
-            logCall(logMessage);
-        } else {
-            console.log(logMessage);
-        }
+        Plugin.getInstance().log(level, message);
     }
 
     @call('plugin.page.onEvent')
