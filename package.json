@@ -5,7 +5,7 @@
         "codearts",
         "plugin"
     ],
-    "version": "0.4.0",
+    "version": "0.4.1",
     "license": "SEE LICENSE IN LICENSE",
     "description": "core plugin api of cloudide frontend and backend",
     "repository": {
@@ -19,7 +19,7 @@
         "lib/node"
     ],
     "devDependencies": {
-        "@codearts/plugin": "^0.1.3",
+        "@codearts/plugin": "^0.1.4",
         "@types/cheerio": "^0.22.16",
         "@types/ejs": "^3.0.4",
         "@types/mocha": "^8.0.2",

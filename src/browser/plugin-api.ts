@@ -7,7 +7,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 declare let acquireVsCodeApi: any;
 declare let acquireCloudidePluginApi: any;
-import { DialogOptions } from '@codearts/plugin';
+import { DialogOptions, MenuItem } from '@codearts/plugin';
 import { Deferred, IframeLike, exposable, expose, messaging, Messaging } from '@cloudide/messaging';
 import { WebviewOptions, LogLevel } from '../common/plugin-common';
 import { format } from '@cloudide/nls/lib/common/common';
@@ -351,6 +351,21 @@ export class PluginPage {
      */
     public async executeCommand(id: string, ...args: any[]): Promise<any> {
         return this.call('cloudide.commands.executeCommand', id, ...args);
+    }
+
+    /**
+     * Register context menu to the target dom
+     * @param target the dom to add context menu
+     * @param menu menu items
+     */
+    public registerContextMenu(target: HTMLElement | Document, menu?: MenuItem[], isOnce?: boolean) {
+        target.addEventListener(
+            'contextmenu',
+            (e) => {
+                (e as any)['menu'] = menu;
+            },
+            { once: !!isOnce }
+        );
     }
 }
 

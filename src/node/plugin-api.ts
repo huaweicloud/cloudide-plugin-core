@@ -143,11 +143,7 @@ export class Plugin {
         if (Plugin.instance && opts) {
             const webviewPanel = Plugin.instance.container.get(opts.viewType);
             if (webviewPanel && webviewPanel instanceof BaseWebviewPanel && !webviewPanel.disposed) {
-                webviewPanel.pluginPanel.reveal(
-                    opts.targetArea,
-                    webviewPanel.pluginPanel.viewColumn,
-                    opts.preserveFocus
-                );
+                webviewPanel.pluginPanel.reveal(webviewPanel.pluginPanel.viewColumn, opts.preserveFocus);
             } else {
                 Plugin.instance.createWebviewPanel(opts);
             }
@@ -299,11 +295,7 @@ export class Plugin {
     revive(panel: cloudide.WebviewPanel, context: cloudide.ExtensionContext, opts: WebviewOptions, state: any): void {
         const webviewContainer = this._container.get(opts.viewType);
         if (webviewContainer && webviewContainer.disposed) {
-            if (typeof panel.showOptions === 'object') {
-                panel.reveal(panel.showOptions.area, panel.viewColumn, opts.preserveFocus);
-            } else {
-                panel.reveal(panel.viewColumn, opts.preserveFocus);
-            }
+            panel.reveal(panel.viewColumn, opts.preserveFocus);
         } else {
             // dispose webview if already revealed in case plugin is registered to start on event "*"
             panel.dispose();
