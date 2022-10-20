@@ -357,15 +357,17 @@ export class PluginPage {
      * Register context menu to the target dom
      * @param target the dom to add context menu
      * @param menu menu items
+     * @param concat concatenate all menu items registered
      */
-    public registerContextMenu(target: HTMLElement | Document, menu?: MenuItem[], isOnce?: boolean) {
-        target.addEventListener(
-            'contextmenu',
-            (e) => {
+    public registerContextMenu(target: HTMLElement | Document, menu?: MenuItem[], concat?: boolean) {
+        target.addEventListener('contextmenu', (e) => {
+            const curMenu: MenuItem[] | undefined = (e as any)['menu'];
+            if (concat) {
+                (e as any)['menu'] = curMenu || menu ? [...(curMenu || []), ...(menu || [])] : curMenu;
+            } else {
                 (e as any)['menu'] = menu;
-            },
-            { once: !!isOnce }
-        );
+            }
+        });
     }
 }
 
