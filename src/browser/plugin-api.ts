@@ -79,6 +79,7 @@ export class PluginPage {
     private registeredEventHandlers: Map<string, ((eventType: string, event: any) => void)[]> = new Map();
     private extensionPath?: string;
     private frontends: Map<IFrontendConstructor<AbstractFrontend>, AbstractFrontend> = new Map();
+    private registeredContextMenu: Map<Document | HTMLElement, (e: any) => void> = new Map();
     private constructor(pluginPageContext: PluginPageContext, frontends: IFrontendConstructor<AbstractFrontend>[]) {
         this.pluginPageContext = pluginPageContext;
         this.cloudidePluginApi = cloudidePluginApi;
@@ -359,15 +360,22 @@ export class PluginPage {
      * @param menu menu items
      * @param concat concatenate all menu items registered
      */
-    public registerContextMenu(target: HTMLElement | Document, menu?: MenuItem[], concat?: boolean) {
-        target.addEventListener('contextmenu', (e) => {
+    public registerContextMenu(target: Document | HTMLElement, menu?: MenuItem[], concat?: boolean) {
+        const existTargetCallBack = this.registeredContextMenu.get(target);
+        if (existTargetCallBack) {
+            target.removeEventListener('contextmenu', existTargetCallBack);
+            this.registeredContextMenu.delete(target);
+        }
+        const callback = (e: any) => {
             const curMenu: MenuItem[] | undefined = (e as any)['menu'];
             if (concat) {
-                (e as any)['menu'] = curMenu || menu ? [...(curMenu || []), ...(menu || [])] : curMenu;
+                e['menu'] = curMenu || menu ? [...(curMenu || []), ...(menu || [])] : curMenu;
             } else {
-                (e as any)['menu'] = menu;
+                e['menu'] = menu;
             }
-        });
+        };
+        this.registeredContextMenu.set(target, callback);
+        target.addEventListener('contextmenu', callback);
     }
 }
 
