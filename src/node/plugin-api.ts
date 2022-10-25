@@ -214,9 +214,11 @@ export class Plugin {
 
     public dispatchMessage(sourceViewType: string, message: any): void {
         this.container.forEach(async (webviewContainer, viewType) => {
-            if (viewType !== sourceViewType) {
+            if (viewType !== sourceViewType && !webviewContainer.disposed) {
                 await webviewContainer.pageInitialized.promise;
-                webviewContainer.postMessage(message);
+                if (!webviewContainer.disposed) {
+                    webviewContainer.postMessage(message);
+                }
             }
         });
     }
