@@ -246,8 +246,7 @@ export class Plugin {
      */
     public async call(identifier: string, ...args: any[]): Promise<any> {
         const viewType = identifier.indexOf('::') >= 0 ? identifier.substring(0, identifier.indexOf('::')) : '';
-        const viewContainer =
-            this._container.size === 1 ? this._container.values().next().value : this._container.get(viewType);
+        const viewContainer = this._container.get(viewType);
         if (!viewContainer) {
             this.log(LogLevel.ERROR, `target view not exist: ${viewType}`);
             return Promise.reject(`target view not exist: ${viewType}`);
