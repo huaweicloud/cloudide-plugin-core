@@ -160,17 +160,19 @@ export class PluginPage {
 
     /**
      * Initialize plugin page API and frontend classes
+     * The call to create function will only take effect once.
      * @param frontends All frontend classes that need to be created.
      */
-    public static create(frontends: IFrontendConstructor<AbstractFrontend>[]): void {
+    public static create(frontends: IFrontendConstructor<AbstractFrontend>[]): PluginPage {
         if (this.instance && this.instance.pluginPageContext) {
-            return;
+            return this.instance;
         }
         this.instance = new PluginPage(new PluginPageContext(window), frontends);
+        return this.instance;
     }
 
     /**
-     * Return plugin page API object
+     * Return plugin page API object, call it after calling craete
      */
     public static getInstance(): PluginPage {
         return this.instance;
