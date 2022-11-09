@@ -5,7 +5,7 @@
         "codearts",
         "plugin"
     ],
-    "version": "0.4.5",
+    "version": "0.4.6",
     "license": "SEE LICENSE IN LICENSE",
     "description": "core plugin api of cloudide frontend and backend",
     "repository": {
@@ -21,7 +21,7 @@
     "devDependencies": {
         "@codearts/plugin": "^0.1.4",
         "@types/cheerio": "^0.22.16",
-        "@types/ejs": "^3.0.4",
+        "@types/ejs": "^3.1.1",
         "@types/mocha": "^8.0.2",
         "@types/pug": "^2.0.4",
         "@types/uuid": "^3.4.5",
@@ -30,7 +30,7 @@
         "eslint": "^7.4.0",
         "eslint-config-prettier": "^6.11.0",
         "eslint-plugin-prettier": "^3.1.4",
-        "mocha": "^8.1.1",
+        "mocha": "^9.2.1",
         "prettier": "^2.0.5",
         "ts-node": "^9.1.1",
         "typescript": "^4.4.0"
@@ -39,7 +39,7 @@
         "@cloudide/messaging": "^0.1.0",
         "@cloudide/nls": "latest",
         "cheerio": "^1.0.0-rc.3",
-        "ejs": "^3.1.5",
+        "ejs": "^3.1.8",
         "pug": "^3.0.0",
         "reflect-metadata": "^0.1.13",
         "uuid": "^3.3.3"
