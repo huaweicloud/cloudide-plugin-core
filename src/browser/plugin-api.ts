@@ -327,7 +327,7 @@ export class PluginPage {
      * @param opts options to configure the webview
      * @param override replace the webview with the same viewType
      */
-    public async createWebviewPanel(opts: WebviewOptions, override?: boolean): Promise<void> {
+    public async createWebviewPanel(opts: WebviewOptions, override?: boolean): Promise<boolean> {
         return this.call('plugin.createWebviewPanel', opts, override);
     }
 
@@ -336,8 +336,17 @@ export class PluginPage {
      * @param opts options to configure the dynamic webview
      * @param override replace the dynamic webview with the same viewType
      */
-    public async createWebviewViewDialog(opts: WebviewOptions & DialogOptions): Promise<void> {
+    public async createWebviewViewDialog(opts: WebviewOptions & DialogOptions): Promise<boolean> {
         return this.call('plugin.createWebviewViewDialog', opts);
+    }
+
+    /**
+     * Register a provider for project wizard with webview view.
+     * @param opts options to create the webview provider
+     * @returns Pormose<void>
+     */
+    public async registerProjectWizardProvider(opts: WebviewOptions): Promise<boolean> {
+        return this.call('plugin.registerProjectWizardProvider', opts);
     }
 
     /**

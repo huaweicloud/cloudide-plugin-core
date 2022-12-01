@@ -212,6 +212,35 @@ export class Plugin {
         return dialog;
     }
 
+    /**
+     * Register project wizard provider to the new project dialog
+     *
+     * @param opts options to create the webview provider
+     *
+     *   opts.viewType will be the id of project wizard provider, the viewType should not
+     *   conflict with others. opts.title will be the label of project wizard provider,
+     *   which will be displayed in the left menu list.
+     *
+     * @returns cloudide.Disposable
+     */
+    public registerProjectWizardProvider(opts: WebviewOptions): cloudide.Disposable | undefined {
+        const provider = new BaseWebviewDialogProvider(this.context, opts);
+        let disposable = undefined;
+        try {
+            disposable = (cloudide as any).window.registerProjectWizardProvider(opts.viewType, opts.title, provider, {
+                iconPath: opts.iconPath
+            });
+        } catch (e) {
+            this.log(LogLevel.ERROR, (<any>e).message);
+            return undefined;
+        }
+
+        Messaging.bind(provider, backendClientIdentifier);
+        this.container.set(opts.viewType, provider);
+        provider.onDispose(disposable.dispose.bind(disposable));
+        return disposable;
+    }
+
     public dispatchMessage(sourceViewType: string, message: any): void {
         this.container.forEach(async (webviewContainer, viewType) => {
             if (viewType !== sourceViewType && !webviewContainer.disposed) {
@@ -753,6 +782,14 @@ class DefaultPluginApiHost extends AbstractBackend {
     @expose('plugin.createWebviewViewDialog')
     public createWebviewViewDialog(opts: WebviewOptions): boolean {
         if (!Plugin.getInstance().createWebviewViewDialog(opts)) {
+            return false;
+        }
+        return true;
+    }
+
+    @expose('plugin.registerProjectWizardProvider')
+    public registerProjectWizardProvider(opts: WebviewOptions): boolean {
+        if (!Plugin.getInstance().registerProjectWizardProvider(opts)) {
             return false;
         }
         return true;
