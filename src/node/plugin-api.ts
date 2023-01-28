@@ -277,8 +277,8 @@ export class Plugin {
         const viewType = identifier.indexOf('::') >= 0 ? identifier.substring(0, identifier.indexOf('::')) : '';
         const viewContainer = this._container.get(viewType);
         if (!viewContainer) {
-            this.log(LogLevel.ERROR, `target view not exist: ${viewType}`);
-            return Promise.reject(`target view not exist: ${viewType}`);
+            this.log(LogLevel.ERROR, `target view does not exist: ${viewType}`);
+            return Promise.reject(`target view does not exist: ${viewType}`);
         }
         await viewContainer.pageInitialized.promise;
         const messagingInstance = Messaging.getInstance();
