@@ -226,9 +226,17 @@ export class Plugin {
     public registerProjectWizardProvider(opts: WebviewOptions): cloudide.Disposable | undefined {
         const provider = new BaseWebviewDialogProvider(this.context, opts);
         let disposable = undefined;
+        const iconPath = opts.iconPath
+            ? cloudide.Uri.file(
+                  path.join(
+                      this.context.extensionPath,
+                      typeof opts.iconPath === 'object' ? opts.iconPath.light : opts.iconPath
+                  )
+              )
+            : undefined;
         try {
             disposable = (cloudide as any).window.registerProjectWizardProvider(opts.viewType, opts.title, provider, {
-                iconPath: opts.iconPath
+                iconPath
             });
         } catch (e) {
             this.log(LogLevel.ERROR, (<any>e).message);
