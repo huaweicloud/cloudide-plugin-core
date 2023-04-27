@@ -236,7 +236,8 @@ export class Plugin {
             : undefined;
         try {
             disposable = (cloudide as any).window.registerProjectWizardProvider(opts.viewType, opts.title, provider, {
-                iconPath
+                iconPath,
+                index: opts.index
             });
         } catch (e) {
             this.log(LogLevel.ERROR, (<any>e).message);
