@@ -58,6 +58,13 @@ export interface WebviewOptions {
      * l10n stores all locialization items of specific locale
      */
     templateEngine?: 'ejs' | 'pug';
+
+    /**
+     * The index of the webview in the TabViewPane,The value ranges from 0 to 2^32-2.
+     * Sort from min to max.
+     * If not defined, sort to the end.
+     */
+    index?: number;
 }
 
 export enum EventType {
