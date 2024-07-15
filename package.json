@@ -5,7 +5,7 @@
         "codearts",
         "plugin"
     ],
-    "version": "0.5.0",
+    "version": "0.5.1",
     "license": "SEE LICENSE IN LICENSE",
     "description": "core plugin api of cloudide frontend and backend",
     "repository": {
@@ -47,7 +47,7 @@
     "scripts": {
         "prepare": "npm run eslint && npm run build && npm run test",
         "build": "tsc",
-        "eslint": "eslint 'src/**/*.{js,ts,tsx}' --quiet --fix",
+        "eslint": "eslint src/**/*.{js,ts,tsx} --quiet --fix",
         "test": "mocha"
     }
 }
