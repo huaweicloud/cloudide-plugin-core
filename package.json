@@ -42,7 +42,7 @@
         "ejs": "^3.1.8",
         "pug": "^3.0.0",
         "reflect-metadata": "^0.1.13",
-        "uuid": "^3.3.3"
+        "uuid": "^14.0.0"
     },
     "scripts": {
         "prepare": "npm run eslint && npm run build && npm run test",
